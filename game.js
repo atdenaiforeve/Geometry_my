@@ -24,6 +24,34 @@ const baseBlocks=[
 let spikes=baseSpikes.map(o=>({...o}));
 let blocks=baseBlocks.map(o=>({...o}));
 let camera=0,dead=false,deathReason="",holding=false,playing=false;
+let levelStartX=120;
+const SAVE_KEY="nexusProgress_v1";
+let progress={best:0};
+function loadProgress(){
+  try{
+    const saved=localStorage.getItem(SAVE_KEY);
+    if(saved){
+      const data=JSON.parse(saved);
+      if(Number.isFinite(data.best)) progress.best=Math.max(0,Math.min(100,Math.round(data.best)));
+    }
+  }catch(e){}
+}
+function saveProgress(){
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(progress));}catch(e){}
+}
+function updateBestProgress(){
+  const endX=3000;
+  const percent=Math.max(0,Math.min(100,Math.round(((player.x-levelStartX)/(endX-levelStartX))*100)));
+  if(percent>progress.best){
+    progress.best=percent;
+    saveProgress();
+    updateBestLabel();
+  }
+}
+function updateBestLabel(){
+  const el=document.getElementById("level1Best");
+  if(el)el.textContent="BEST: "+progress.best+"% · FIRST FLIGHT";
+}
 
 function resize(){
   // 1.5x is a good mobile-friendly quality/performance ceiling.
@@ -158,6 +186,7 @@ function update(dt){
   }else player.onGround=false;
 
   camera=Math.max(0,player.x-180);
+  updateBestProgress();
 
   // Cheap broad-phase first: only run the SAT collision test when shapes are nearby.
   const playerRight=player.x+player.size;
@@ -245,6 +274,8 @@ document.querySelectorAll(".level").forEach(button=>{
     if(button.dataset.level==="1")startGame();
   });
 });
+loadProgress();
+updateBestLabel();
 reset();requestAnimationFrame(loop);
 
 
