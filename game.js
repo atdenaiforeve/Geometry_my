@@ -4,7 +4,12 @@ let w=0,h=0,dpr=1;
 const DESIGN_W=960,DESIGN_H=540;
 const player={x:120,y:0,size:34,vy:0,onGround:false,rotation:0};
 const CHARACTER_COLOR_KEY="nexusCharacterColor_v1";
+const CHARACTER_PAINT_KEY="nexusCharacterPaint_v1";
+const PAINT_SIZE=12;
 let characterColor="#4dd7ff";
+let paintGrid=Array(PAINT_SIZE*PAINT_SIZE).fill(null);
+let paintHistory=[];
+let paintEraser=false;
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
 const baseSpikes=[
@@ -40,6 +45,26 @@ function loadCharacterColor(){
 function saveCharacterColor(){
   try{localStorage.setItem(CHARACTER_COLOR_KEY,characterColor)}catch(e){}
 }
+function loadCharacterPaint(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(CHARACTER_PAINT_KEY)||"null");
+    if(Array.isArray(saved)&&saved.length===PAINT_SIZE*PAINT_SIZE){
+      paintGrid=saved.map(v=>/^#[0-9A-Fa-f]{6}$/.test(v||"")?v:null);
+    }
+  }catch(e){}
+}
+function saveCharacterPaint(){
+  try{localStorage.setItem(CHARACTER_PAINT_KEY,JSON.stringify(paintGrid))}catch(e){}
+}
+function paintHasAny(){return paintGrid.some(Boolean)}
+function drawPaintedCharacter(target,size){
+  const p=target;
+  const cell=size/PAINT_SIZE;
+  for(let y=0;y<PAINT_SIZE;y++)for(let x=0;x<PAINT_SIZE;x++){
+    const color=paintGrid[y*PAINT_SIZE+x];
+    if(color){p.fillStyle=color;p.fillRect(x*cell,y*cell,cell+.5,cell+.5)}
+  }
+}
 function drawCharacterPreview(){
   const c=document.getElementById("characterPreviewCanvas");
   if(!c)return;
@@ -49,8 +74,12 @@ function drawCharacterPreview(){
   p.save();
   p.translate(c.width/2,c.height/2);
   p.rotate(-0.18);
-  const size=74;
-  p.fillStyle=characterColor;p.fillRect(-size/2,-size/2,size,size);
+  const size=110;
+  p.fillStyle="#10131d";p.fillRect(-size/2,-size/2,size,size);
+  p.save();p.translate(-size/2,-size/2);
+  if(paintHasAny())drawPaintedCharacter(p,size);
+  else{p.fillStyle=characterColor;p.fillRect(0,0,size,size)}
+  p.restore();
   p.strokeStyle="#ffffff";p.lineWidth=5;p.strokeRect(-size/2+2.5,-size/2+2.5,size-5,size-5);
   p.restore();
 }
@@ -292,8 +321,12 @@ function draw(){
   ctx.save();
   ctx.translate(px+player.size/2,player.y+player.size/2);
   ctx.rotate(player.rotation);
-  ctx.fillStyle=characterColor;
-  ctx.fillRect(-player.size/2,-player.size/2,player.size,player.size);
+  if(paintHasAny()){
+    ctx.save();ctx.translate(-player.size/2,-player.size/2);drawPaintedCharacter(ctx,player.size);ctx.restore();
+  }else{
+    ctx.fillStyle=characterColor;
+    ctx.fillRect(-player.size/2,-player.size/2,player.size,player.size);
+  }
   ctx.strokeStyle="#b8f2ff";ctx.lineWidth=3;
   ctx.strokeRect(-player.size/2+1.5,-player.size/2+1.5,player.size-3,player.size-3);
   ctx.restore();
@@ -306,6 +339,44 @@ function draw(){
   }
 }
 loadCharacterColor();
+loadCharacterPaint();
+
+function drawPaintEditor(){
+  const c=document.getElementById("paintCanvas"); if(!c)return;
+  const p=c.getContext("2d"),size=c.width,cell=size/PAINT_SIZE;
+  p.clearRect(0,0,size,size);
+  p.fillStyle="#0b0814";p.fillRect(0,0,size,size);
+  for(let y=0;y<PAINT_SIZE;y++)for(let x=0;x<PAINT_SIZE;x++){
+    const color=paintGrid[y*PAINT_SIZE+x];
+    p.fillStyle=color||((x+y)%2?"#11101b":"#0d0c15");
+    p.fillRect(x*cell,y*cell,cell,cell);
+    p.strokeStyle="rgba(255,255,255,.13)";p.lineWidth=1;p.strokeRect(x*cell+.5,y*cell+.5,cell-1,cell-1);
+  }
+  p.strokeStyle="#00e5ff";p.lineWidth=4;p.strokeRect(2,2,size-4,size-4);
+}
+function paintAtEvent(e){
+  const c=document.getElementById("paintCanvas");if(!c)return;
+  const r=c.getBoundingClientRect();
+  const x=Math.max(0,Math.min(PAINT_SIZE-1,Math.floor((e.clientX-r.left)/r.width*PAINT_SIZE)));
+  const y=Math.max(0,Math.min(PAINT_SIZE-1,Math.floor((e.clientY-r.top)/r.height*PAINT_SIZE)));
+  const i=y*PAINT_SIZE+x;
+  const next=paintEraser?null:document.getElementById("paintColor").value.toUpperCase();
+  if(paintGrid[i]===next)return;
+  paintGrid[i]=next;saveCharacterPaint();drawPaintEditor();drawCharacterPreview();
+}
+function paintSnapshot(){return paintGrid.slice()}
+function paintUndo(){
+  const old=paintHistory.pop();if(!old)return;
+  paintGrid=old;saveCharacterPaint();drawPaintEditor();drawCharacterPreview();
+}
+function switchCustomizeMode(mode){
+  const pro=mode==="pro";
+  document.getElementById("autoColorPanel").classList.toggle("hidden",pro);
+  document.getElementById("proCreatePanel").classList.toggle("hidden",!pro);
+  document.getElementById("autoColorMode").classList.toggle("active",!pro);
+  document.getElementById("proCreateMode").classList.toggle("active",pro);
+  if(pro)drawPaintEditor();else drawCharacterPreview();
+}
 
 document.getElementById("customize").addEventListener("click",()=>{
   playing=false;
@@ -315,12 +386,34 @@ document.getElementById("customize").addEventListener("click",()=>{
   const value=document.getElementById("characterColorValue");
   if(input)input.value=characterColor;
   if(value)value.textContent=characterColor.toUpperCase();
+  switchCustomizeMode("auto");
   drawCharacterPreview();
 });
 document.getElementById("customizeBack").addEventListener("click",()=>{
   hideOverlay(document.getElementById("customizeMenu"));
   showOverlay(document.getElementById("menu"));
 });
+document.getElementById("autoColorMode").addEventListener("click",()=>switchCustomizeMode("auto"));
+document.getElementById("proCreateMode").addEventListener("click",()=>switchCustomizeMode("pro"));
+document.getElementById("paintColor").addEventListener("input",e=>{
+  document.getElementById("paintColorValue").textContent=e.target.value.toUpperCase();
+  paintEraser=false;document.getElementById("paintEraser").classList.remove("active");
+});
+document.getElementById("paintEraser").addEventListener("click",()=>{
+  paintEraser=!paintEraser;document.getElementById("paintEraser").classList.toggle("active",paintEraser);
+});
+document.getElementById("paintClear").addEventListener("click",()=>{
+  paintHistory.push(paintSnapshot());paintGrid=Array(PAINT_SIZE*PAINT_SIZE).fill(null);saveCharacterPaint();drawPaintEditor();drawCharacterPreview();
+});
+document.getElementById("paintUndo").addEventListener("click",paintUndo);
+document.getElementById("paintDone").addEventListener("click",()=>switchCustomizeMode("auto"));
+const paintCanvas=document.getElementById("paintCanvas");
+let painting=false;
+paintCanvas.addEventListener("pointerdown",e=>{e.preventDefault();paintHistory.push(paintSnapshot());painting=true;paintAtEvent(e);paintCanvas.setPointerCapture?.(e.pointerId)});
+paintCanvas.addEventListener("pointermove",e=>{if(painting){e.preventDefault();paintAtEvent(e)}});
+paintCanvas.addEventListener("pointerup",()=>painting=false);
+paintCanvas.addEventListener("pointercancel",()=>painting=false);
+
 document.getElementById("characterColor").addEventListener("input",e=>{
   characterColor=e.target.value.toUpperCase();
   document.getElementById("characterColorValue").textContent=characterColor;
