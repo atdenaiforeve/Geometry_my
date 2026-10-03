@@ -25,6 +25,7 @@
     <h2>LEVEL SELECT</h2>
     <button class="level" data-level="1" type="button">LEVEL 1 <span id="level1Best">BEST: 0% · FIRST FLIGHT</span></button>
     <button class="level" data-level="2" type="button">LEVEL 2 🔒 <span>LOCKED</span></button>
+    <div id="officialLevels" class="officialLevels" aria-label="Official creator levels"></div>
     <button id="back" type="button">BACK</button>
   </div>
 
@@ -40,6 +41,7 @@
   <div id="editorMenu" class="editorOverlay hidden">
     <div class="editorPanel">
       <div class="editorTop">
+        <input id="levelName" class="levelName" maxlength="28" autocomplete="off" placeholder="LEVEL NAME" aria-label="Level name">
         <div>
           <h2>LEVEL MAKER</h2>
           <p id="editorStatus">BLOCK selected · tap the grid to place</p>
@@ -47,6 +49,9 @@
         <button id="closeEditor" type="button">EXIT</button>
       </div>
       <div class="editorModeTabs">
+        <button id="editorMove" type="button">MOVE</button>
+        <button id="editorCopy" type="button">COPY</button>
+        <button id="editorPaste" type="button">PASTE</button>
         <button class="modeTab active" data-mode="build" type="button">BUILD</button>
         <button class="modeTab" data-mode="edit" type="button">EDIT</button>
         <button class="modeTab" data-mode="delete" type="button">DELETE</button>
@@ -74,6 +79,7 @@
       </div>
       <div class="editorActions">
         <button id="saveLevel" type="button">SAVE LEVEL</button>
+        <button id="publishLevel" type="button">PUBLISH AS OFFICIAL</button>
         <button id="testLevel" type="button">TEST LEVEL</button>
         <button id="clearLevel" type="button">CLEAR</button>
       </div>
