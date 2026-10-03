@@ -127,3 +127,14 @@ canvas{display:block;image-rendering:auto}
 .officialLevel{min-width:0!important;width:100%;font-size:14px!important}
 .officialLevel span{float:right;opacity:.7;font-size:10px}
 @media(max-width:650px){.levelName{width:100%;min-width:0}.editorTop{flex-wrap:wrap}.editorTop .levelName{order:3}.officialLevels{max-height:22vh}}
+
+
+/* ===== CHARACTER CUSTOMIZATION ===== */
+.characterPreview{width:220px;height:220px;display:flex;align-items:center;justify-content:center}
+#characterPreviewCanvas{width:220px;height:220px;display:block}
+.colorControls{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;z-index:2}
+.colorControls label{font-size:12px;letter-spacing:2px;color:var(--muted);font-weight:800}
+#characterColor{width:58px;height:42px;padding:2px;border:2px solid #3b3158;border-radius:8px;background:#0b0814;cursor:pointer}
+#characterColor:focus-visible{outline:3px solid var(--r3);outline-offset:3px}
+#characterColorValue{min-width:78px;font:700 12px system-ui;letter-spacing:1px;color:var(--text)}
+@media(max-height:600px){.characterPreview,#characterPreviewCanvas{width:150px;height:150px}}
