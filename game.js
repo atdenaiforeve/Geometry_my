@@ -41,7 +41,9 @@ addEventListener("resize",resize);resize();
 function startGame(){
   playing=true;
   document.getElementById("menu").classList.add("hidden");
+  document.getElementById("menu").style.display="none";
   document.getElementById("levelMenu").classList.add("hidden");
+  document.getElementById("levelMenu").style.display="none";
   reset();
 }
 function reset(){
@@ -66,8 +68,6 @@ canvas.addEventListener("pointerdown",e=>{e.preventDefault();holding=true;doJump
 addEventListener("pointerup",()=>holding=false);
 addEventListener("pointercancel",()=>holding=false);
 
-// Accurate geometry collision: the player is a rectangle and each spike is a triangle.
-// SAT (Separating Axis Theorem) checks the actual shapes instead of loose boxes.
 function project(poly,axis){
   let min=Infinity,max=-Infinity;
   for(const p of poly){
@@ -106,9 +106,7 @@ function spikePolygon(s){
     {x:s.x+s.w,y:baseY}
   ];
 }
-function accurateSpikeHit(s){
-  return polygonsOverlap(playerPolygon(),spikePolygon(s));
-}
+function accurateSpikeHit(s){return polygonsOverlap(playerPolygon(),spikePolygon(s));}
 function blockRect(b){
   const floor=h-groundHeight;
   return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
@@ -135,7 +133,6 @@ function update(dt){
   player.x+=speed*dt;
   player.vy+=gravity*dt;
   player.y+=player.vy*dt;
-  // Rotate in 90-degree steps while airborne, then settle when grounded.
   if(!player.onGround) player.rotation += (speed/player.size)*dt*Math.PI/2;
 
   const floor=h-groundHeight-player.size;
@@ -205,11 +202,16 @@ function draw(){
 document.getElementById("play").addEventListener("click",()=>{
   playing=false;
   document.getElementById("menu").classList.add("hidden");
+  document.getElementById("menu").style.display="none";
   document.getElementById("levelMenu").classList.remove("hidden");
+  document.getElementById("levelMenu").style.display="flex";
 });
 document.getElementById("back").addEventListener("click",()=>{
+  playing=false;
   document.getElementById("levelMenu").classList.add("hidden");
+  document.getElementById("levelMenu").style.display="none";
   document.getElementById("menu").classList.remove("hidden");
+  document.getElementById("menu").style.display="flex";
 });
 document.querySelectorAll(".level").forEach(button=>{
   button.addEventListener("click",()=>{
