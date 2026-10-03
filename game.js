@@ -3,6 +3,8 @@ const ctx=canvas.getContext("2d");
 let w=0,h=0,dpr=1;
 const DESIGN_W=960,DESIGN_H=540;
 const player={x:120,y:0,size:34,vy:0,onGround:false,rotation:0};
+const CHARACTER_COLOR_KEY="nexusCharacterColor_v1";
+let characterColor="#4dd7ff";
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
 const baseSpikes=[
@@ -29,6 +31,29 @@ let creatorTestMode=false;
 let creatorTestEndX=3000;
 const SAVE_KEY="nexusProgress_v1";
 let progress={best:0};
+function loadCharacterColor(){
+  try{
+    const saved=localStorage.getItem(CHARACTER_COLOR_KEY);
+    if(/^#[0-9a-fA-F]{6}$/.test(saved||"")) characterColor=saved;
+  }catch(e){}
+}
+function saveCharacterColor(){
+  try{localStorage.setItem(CHARACTER_COLOR_KEY,characterColor)}catch(e){}
+}
+function drawCharacterPreview(){
+  const c=document.getElementById("characterPreviewCanvas");
+  if(!c)return;
+  const p=c.getContext("2d");
+  p.clearRect(0,0,c.width,c.height);
+  p.fillStyle="rgba(5,3,10,.45)";p.fillRect(0,0,c.width,c.height);
+  p.save();
+  p.translate(c.width/2,c.height/2);
+  p.rotate(-0.18);
+  const size=74;
+  p.fillStyle=characterColor;p.fillRect(-size/2,-size/2,size,size);
+  p.strokeStyle="#ffffff";p.lineWidth=5;p.strokeRect(-size/2+2.5,-size/2+2.5,size-5,size-5);
+  p.restore();
+}
 function loadProgress(){
   try{
     const saved=localStorage.getItem(SAVE_KEY);
@@ -267,7 +292,7 @@ function draw(){
   ctx.save();
   ctx.translate(px+player.size/2,player.y+player.size/2);
   ctx.rotate(player.rotation);
-  ctx.fillStyle="#4dd7ff";
+  ctx.fillStyle=characterColor;
   ctx.fillRect(-player.size/2,-player.size/2,player.size,player.size);
   ctx.strokeStyle="#b8f2ff";ctx.lineWidth=3;
   ctx.strokeRect(-player.size/2+1.5,-player.size/2+1.5,player.size-3,player.size-3);
@@ -280,6 +305,29 @@ function draw(){
     ctx.font="18px system-ui";ctx.fillText("Tap or press Space to restart",w/2,h/2+28);
   }
 }
+loadCharacterColor();
+
+document.getElementById("customize").addEventListener("click",()=>{
+  playing=false;
+  hideOverlay(document.getElementById("menu"));
+  showOverlay(document.getElementById("customizeMenu"));
+  const input=document.getElementById("characterColor");
+  const value=document.getElementById("characterColorValue");
+  if(input)input.value=characterColor;
+  if(value)value.textContent=characterColor.toUpperCase();
+  drawCharacterPreview();
+});
+document.getElementById("customizeBack").addEventListener("click",()=>{
+  hideOverlay(document.getElementById("customizeMenu"));
+  showOverlay(document.getElementById("menu"));
+});
+document.getElementById("characterColor").addEventListener("input",e=>{
+  characterColor=e.target.value.toUpperCase();
+  document.getElementById("characterColorValue").textContent=characterColor;
+  saveCharacterColor();
+  drawCharacterPreview();
+});
+
 document.getElementById("play").addEventListener("click",()=>{
   playing=false;
   document.getElementById("menu").classList.add("hidden");
