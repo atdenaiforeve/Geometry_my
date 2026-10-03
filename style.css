@@ -1,203 +1,91 @@
-/* ===== Into the Nexus: upgraded menu styles ===== */
+/* ===== THE NEXUS: where multiple realities collide =====
+   Master menu style: four realities bleed together at the Nexus rift. */
 :root{
-  --bg:#0b0d14;
-  --panel:#151927;
-  --accent:#4dd7ff;
-  --accent2:#b66bff;
-  --accent3:#ff4d8d;
-  --text:#f2f6ff;
-  --muted:#8c96ad;
-  --border:#2c3347;
+  --void:#05030a;--r1:#00e5ff;--r2:#ff2e93;--r3:#ffb020;--r4:#7cff4d;
+  --violet:#8a4dff;--text:#eef2ff;--muted:#8f8aa8;--border:#2a2440;--cut:14px;
 }
-
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
-
-html,body{
-  margin:0;width:100%;height:100%;overflow:hidden;
-  background:var(--bg);
-  overscroll-behavior:none;
-}
-
-body{
-  touch-action:none;
-  font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
-  color:var(--text);
-}
-
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--void);overscroll-behavior:none}
+body{touch-action:none;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--text)}
 canvas{display:block;image-rendering:auto}
 
-/* ===== Menu overlay ===== */
 .menu{
-  position:fixed;inset:0;z-index:10;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:16px;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
-  color:var(--text);text-align:center;
+  color:var(--text);text-align:center;overflow:hidden;
   background:
-    radial-gradient(circle at 20% 20%,rgba(182,107,255,.22),transparent 45%),
-    radial-gradient(circle at 80% 80%,rgba(77,215,255,.2),transparent 45%),
-    linear-gradient(160deg,#0b0d14,#12162a 60%,#0b0d14);
-  background-size:140% 140%;
-  animation:bgShift 12s ease-in-out infinite alternate, fadeIn .35s ease-out;
-  overflow:hidden;
+    radial-gradient(circle at 50% 50%,#000 0,#000 12%,transparent 38%),
+    radial-gradient(circle at 0 0,rgba(0,229,255,.35),transparent 45%),
+    radial-gradient(circle at 100% 0,rgba(255,46,147,.32),transparent 45%),
+    radial-gradient(circle at 0 100%,rgba(124,255,77,.22),transparent 45%),
+    radial-gradient(circle at 100% 100%,rgba(255,176,32,.3),transparent 45%),var(--void);
+  animation:fadeIn .4s ease-out,realityDrift 14s ease-in-out infinite alternate;
 }
-
 .menu:before{
-  content:"";position:absolute;left:-50%;right:-50%;bottom:0;height:45%;
-  background:
-    linear-gradient(rgba(77,215,255,.28) 1px,transparent 1px) 0 0/60px 60px,
-    linear-gradient(90deg,rgba(77,215,255,.28) 1px,transparent 1px) 0 0/60px 60px;
-  transform:perspective(300px) rotateX(62deg);
-  transform-origin:center bottom;
-  animation:grid 1.4s linear infinite;
-  mask-image:linear-gradient(to top,#000 10%,transparent 90%);
-  -webkit-mask-image:linear-gradient(to top,#000 10%,transparent 90%);
-  pointer-events:none;
+  content:"";position:absolute;left:50%;top:50%;width:150vmax;height:150vmax;margin:-75vmax 0 0 -75vmax;
+  background:conic-gradient(from 0deg,var(--r1),var(--violet),var(--r2),var(--r3),var(--r4),var(--r1));
+  opacity:.38;-webkit-mask-image:radial-gradient(circle,transparent 0,transparent 7%,#000 9%,transparent 30%);
+  mask-image:radial-gradient(circle,transparent 0,transparent 7%,#000 9%,transparent 30%);
+  animation:spin 22s linear infinite;filter:blur(1px) saturate(1.3);pointer-events:none;
 }
-
-.menu>*{position:relative;z-index:1}
-.menu.hidden{display:none}
-
+.menu:after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 4px),
+    radial-gradient(circle at 50% 50%,transparent 45%,rgba(0,0,0,.75) 100%);
+  mix-blend-mode:screen;animation:flicker 4s steps(1) infinite;pointer-events:none;
+}
+.menu>*{position:relative;z-index:1}.menu.hidden{display:none}
 .menu h1{
-  font-size:clamp(34px,8vw,72px);
-  margin:0 0 18px;letter-spacing:6px;text-transform:uppercase;font-weight:900;
-  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3),var(--accent));
-  background-size:300% 100%;
-  -webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;color:transparent;
-  filter:drop-shadow(0 0 14px rgba(77,215,255,.55));
-  animation:shine 5s linear infinite, float 3s ease-in-out infinite;
+  font-size:clamp(34px,8vw,76px);margin:0 0 18px;letter-spacing:10px;text-transform:uppercase;font-weight:900;
+  color:#fff;text-shadow:-3px 0 var(--r1),3px 0 var(--r2),0 0 24px rgba(138,77,255,.9),0 0 60px rgba(138,77,255,.6);
+  animation:glitch 3.2s infinite;
 }
-
-.menu h2{
-  font-size:clamp(26px,5vw,48px);
-  margin:0 0 14px;font-weight:800;letter-spacing:2px;
-  text-shadow:0 0 18px rgba(182,107,255,.65);
-}
-
-.menu p{
-  margin:0;font-size:16px;letter-spacing:2px;color:var(--muted);
-}
-
+.menu h2{font-size:clamp(26px,5vw,48px);margin:0 0 14px;font-weight:800;letter-spacing:4px;text-transform:uppercase;text-shadow:-2px 0 var(--r1),2px 0 var(--r2),0 0 22px rgba(138,77,255,.7)}
+.menu p{margin:0;font-size:15px;letter-spacing:4px;text-transform:uppercase;color:var(--muted)}
 .menu button{
-  position:relative;overflow:hidden;
-  min-width:240px;min-height:58px;padding:12px 28px;
-  border:2px solid var(--border);border-radius:14px;
-  background:linear-gradient(180deg,#2b3248,#1c2133);
-  color:var(--text);font:inherit;font-size:20px;font-weight:800;letter-spacing:1px;
-  cursor:pointer;
-  box-shadow:0 6px 0 #0d1019,0 10px 24px rgba(0,0,0,.45);
-  transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease,background .12s ease;
+  position:relative;overflow:hidden;min-width:250px;min-height:58px;padding:12px 30px;border:2px solid transparent;
+  background:linear-gradient(#110d1f,#1b1430) padding-box,linear-gradient(120deg,var(--r1),var(--violet),var(--r2)) border-box;
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+  color:var(--text);font:inherit;font-size:19px;font-weight:800;letter-spacing:3px;text-transform:uppercase;cursor:pointer;
+  text-shadow:0 0 10px rgba(138,77,255,.8);transition:transform .12s ease,filter .15s ease,letter-spacing .2s ease;
 }
-
 .menu button:after{
-  content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;
-  background:linear-gradient(100deg,transparent,rgba(255,255,255,.25),transparent);
-  transform:skewX(-20deg);transition:left .5s ease;
+  content:"";position:absolute;top:0;left:-70%;width:40%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(0,229,255,.45),rgba(255,46,147,.45),transparent);
+  transform:skewX(-25deg);transition:left .45s ease;
 }
-
-.menu button:hover{
-  border-color:var(--accent);
-  background:linear-gradient(180deg,#34406a,#212845);
-  transform:translateY(-2px);
-  box-shadow:0 8px 0 #0d1019,0 0 22px rgba(77,215,255,.45);
-}
-.menu button:hover:after{left:130%}
-
-.menu button:active{
-  transform:translateY(4px) scale(.98);
-  box-shadow:0 2px 0 #0d1019,0 0 14px rgba(77,215,255,.4);
-}
-
-.menu button:focus-visible{outline:3px solid var(--accent3);outline-offset:3px}
-.menu button:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:grayscale(.6)}
-
+.menu button:hover{letter-spacing:4px;filter:drop-shadow(-3px 0 var(--r1)) drop-shadow(3px 0 var(--r2)) brightness(1.2);transform:translateY(-2px);animation:jitter .35s steps(2) 1}
+.menu button:hover:after{left:140%}
+.menu button:active{transform:translateY(2px) scale(.97);filter:drop-shadow(0 0 14px var(--violet)) brightness(1.4)}
+.menu button:focus-visible{outline:3px solid var(--r3);outline-offset:4px}
+.menu button:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:grayscale(.8)}
 .menu button:first-of-type{
-  border-color:transparent;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  color:#08101c;
-  box-shadow:0 6px 0 #2b3a8f,0 10px 30px rgba(77,215,255,.4);
-  animation:pulse 1.8s ease-in-out infinite;
+  color:#05030a;text-shadow:none;
+  background:linear-gradient(120deg,var(--r1),var(--violet) 45%,var(--r2) 75%,var(--r3)) padding-box,
+    linear-gradient(120deg,var(--r1),var(--r2)) border-box;
+  background-size:250% 100%,100% 100%;animation:portal 3s linear infinite;
 }
-.menu button:first-of-type:hover{
-  background:linear-gradient(135deg,#7be4ff,#c98aff);
-  box-shadow:0 8px 0 #2b3a8f,0 0 34px rgba(77,215,255,.7);
-}
-
-.menu .level{
-  font-size:18px;
-  border-color:var(--border);
-}
-
+.menu button:first-of-type:hover{filter:drop-shadow(0 0 22px var(--violet)) drop-shadow(0 0 40px var(--r2)) brightness(1.15)}
+.menu .level{font-size:17px}
 .loader{
-  width:240px;height:10px;
-  border:2px solid var(--border);border-radius:10px;overflow:hidden;
-  background:#0f1220;
-  box-shadow:inset 0 2px 6px rgba(0,0,0,.6),0 0 14px rgba(77,215,255,.2);
+  width:260px;height:12px;border:2px solid var(--border);
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);background:#0a0716;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.7);overflow:hidden;
 }
-.loader:after{
-  content:"";display:block;width:45%;height:100%;border-radius:10px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
-  box-shadow:0 0 12px var(--accent);
-  animation:load 1s ease-in-out infinite;
-}
+.loader:after{content:"";display:block;width:45%;height:100%;background:linear-gradient(90deg,var(--r1),var(--violet),var(--r2),var(--r3));box-shadow:0 0 14px var(--violet);animation:load 1s ease-in-out infinite}
 
 @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(330%)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes bgShift{from{background-position:0% 0%}to{background-position:100% 100%}}
-@keyframes grid{from{background-position:0 0}to{background-position:0 60px}}
-@keyframes shine{to{background-position:300% 0}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes pulse{
-  0%,100%{box-shadow:0 6px 0 #2b3a8f,0 10px 30px rgba(77,215,255,.35)}
-  50%{box-shadow:0 6px 0 #2b3a8f,0 10px 44px rgba(182,107,255,.65)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes realityDrift{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(40deg)}}
+@keyframes portal{from{background-position:0 0,0 0}to{background-position:250% 0,0 0}}
+@keyframes flicker{0%,92%,100%{opacity:1}93%{opacity:.55}95%{opacity:1}97%{opacity:.7}}
+@keyframes glitch{
+  0%,86%,100%{transform:none;text-shadow:-3px 0 var(--r1),3px 0 var(--r2),0 0 24px rgba(138,77,255,.9),0 0 60px rgba(138,77,255,.6)}
+  88%{transform:translate(-4px,1px) skewX(-6deg);text-shadow:-9px 0 var(--r1),9px 0 var(--r2),0 0 24px rgba(138,77,255,.9)}
+  90%{transform:translate(5px,-2px) skewX(5deg);text-shadow:8px 0 var(--r4),-8px 0 var(--r3),0 0 30px rgba(255,46,147,.9)}
+  92%{transform:translate(-2px,0);text-shadow:-5px 0 var(--r1),5px 0 var(--r2),0 0 24px rgba(138,77,255,.9)}
 }
-
-@media (max-height:480px){
-  .menu{gap:10px}
-  .menu h1{margin-bottom:6px}
-  .menu button{min-height:46px;font-size:17px;box-shadow:0 4px 0 #0d1019}
-}
-
-@media (prefers-reduced-motion:reduce){
-  .menu,.menu:before,.menu h1,.menu button:first-of-type,.loader:after{animation:none}
-}
-
-
-/* ===== Level maker ===== */
-#passwordMenu input{
-  width:min(320px,90vw);min-height:52px;padding:12px 16px;
-  border:2px solid var(--border);border-radius:12px;
-  background:#0e1220;color:var(--text);font:inherit;font-size:18px;
-  text-align:center;outline:none;
-}
-#passwordMenu input:focus{border-color:var(--accent);box-shadow:0 0 18px rgba(77,215,255,.28)}
-.errorText{min-height:22px;color:#ff6b8f!important;font-size:14px!important}
-.editorOverlay{
-  position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
-  padding:14px;background:rgba(4,6,12,.96);color:var(--text);
-}
-.editorOverlay.hidden{display:none}
-.editorPanel{
-  width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;gap:10px;
-}
-.editorTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.editorTop h2{margin:0;font-size:clamp(24px,4vw,38px)}
-.editorTop p{margin:4px 0 0;color:var(--muted);font-size:14px}
-.editorTop button,.editorTools button,.editorActions button{
-  min-height:44px;padding:9px 14px;border:2px solid var(--border);border-radius:10px;
-  background:#171d2d;color:var(--text);font:inherit;font-weight:800;cursor:pointer;
-}
-.editorTools,.editorActions{display:flex;flex-wrap:wrap;gap:8px}
-.editorTools .tool.active{border-color:var(--accent);background:#203b4b;box-shadow:0 0 14px rgba(77,215,255,.2)}
-.editorCanvasWrap{
-  width:100%;overflow:hidden;border:2px solid var(--border);border-radius:12px;
-  background:#171a22;touch-action:none;
-}
-#editorCanvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
-.editorActions button:first-child{border-color:var(--accent);color:#08101c;background:linear-gradient(135deg,var(--accent),var(--accent2))}
-@media(max-width:650px){
-  .editorOverlay{padding:8px}
-  .editorPanel{gap:7px}
-  .editorTop{align-items:flex-start}
-  .editorTools button,.editorActions button{flex:1 1 calc(33% - 8px);font-size:13px;padding:8px 7px}
-}
+@keyframes jitter{0%{transform:translate(-2px,-2px)}50%{transform:translate(2px,-3px)}100%{transform:translate(0,-2px)}}
+@media(max-height:480px){.menu{gap:10px}.menu h1{margin-bottom:6px;letter-spacing:6px}.menu button{min-height:46px;font-size:16px}}
+@media(prefers-reduced-motion:reduce){.menu,.menu:before,.menu:after,.menu h1,.menu button,.menu button:first-of-type,.loader:after{animation:none}}
