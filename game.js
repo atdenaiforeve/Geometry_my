@@ -25,6 +25,7 @@ let spikes=baseSpikes.map(o=>({...o}));
 let blocks=baseBlocks.map(o=>({...o}));
 let camera=0,dead=false,deathReason="",holding=false,playing=false;
 let levelStartX=120;
+let creatorTestMode=false;
 const SAVE_KEY="nexusProgress_v1";
 let progress={best:0};
 function loadProgress(){
@@ -41,6 +42,7 @@ function saveProgress(){
 }
 function updateBestProgress(){
   const endX=3000;
+  if(editorMode===false && creatorTestMode) updateCreatorCompletion();
   const percent=Math.max(0,Math.min(100,Math.round(((player.x-levelStartX)/(endX-levelStartX))*100)));
   if(percent>progress.best){
     progress.best=percent;
@@ -89,6 +91,14 @@ function startGame(){
   reset();
   last=performance.now();
   draw();
+}
+function updateCreatorCompletion(){
+  if(creatorTestMode && player.x>=3000){
+    creatorTestBeat=true;
+    creatorTestMode=false;
+    const status=document.getElementById("editorStatus");
+    if(status)status.textContent="✓ LEVEL BEAT · READY TO PUBLISH";
+  }
 }
 function reset(){
   player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;player.rotation=0;
@@ -199,6 +209,7 @@ function update(dt){
 
   camera=Math.max(0,player.x-180);
   updateBestProgress();
+  updateCreatorCompletion();
 
   // Cheap broad-phase first: only run the SAT collision test when shapes are nearby.
   const playerRight=player.x+player.size;
@@ -315,6 +326,7 @@ let editorDragging=false;
 let editorLastPointer=null;
 let editorLevelLoaded=false;
 let editorClipboard=null;
+let creatorTestBeat=false;
 const CREATOR_SAVE_KEY="nexusCreatorLevel";
 const OFFICIAL_LEVELS_KEY="nexusOfficialLevels_v1";
 
@@ -388,6 +400,8 @@ function openEditor(){
   editorZoom=1;
   editorModeTab="build";
   editorSelected=null;
+  creatorTestBeat=false;
+  creatorTestMode=false;
   editorHistory=[];
   editorRedoStack=[];
   loadCreatorLevel();
@@ -598,6 +612,8 @@ function clearCreatorLevel(){
 function testCreatorLevel(){
   spikes=editorObjects.spikes.map(o=>({...o}));
   blocks=editorObjects.blocks.map(o=>({...o}));
+  creatorTestBeat=false;
+  creatorTestMode=true;
   if(!spikes.length&&!blocks.length){
     document.getElementById("editorStatus").textContent="ADD AT LEAST ONE BLOCK OR SPIKE FIRST";
     return;
@@ -649,6 +665,10 @@ function loadOfficialLevels(){
   }catch(e){return []}
 }
 function saveOfficialLevel(){
+  if(!creatorTestBeat){
+    document.getElementById("editorStatus").textContent="PUBLISH LOCKED · BEAT YOUR LEVEL IN TEST MODE FIRST";
+    return;
+  }
   const name=(document.getElementById("levelName")?.value||"NEXUS CREATION").trim().slice(0,28)||"NEXUS CREATION";
   const blocksCopy=editorObjects.blocks.map(o=>({...o}));
   const spikesCopy=editorObjects.spikes.map(o=>({...o}));
