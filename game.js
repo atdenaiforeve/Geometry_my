@@ -5,7 +5,22 @@ const DESIGN_W=960,DESIGN_H=540;
 const player={x:120,y:0,size:34,vy:0,onGround:false};
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
-const spikes=[{x:650,w:38,h:42},{x:850,w:38,h:42},{x:1080,w:38,h:42}];
+const spikes=[
+  {x:650,w:38,h:42},{x:850,w:38,h:42},
+  {x:1080,w:38,h:42},{x:1125,w:38,h:42},
+  {x:1370,w:38,h:58},{x:1580,w:38,h:42},
+  {x:1810,w:38,h:42},{x:1855,w:38,h:42},{x:1900,w:38,h:42},
+  {x:2180,w:38,h:60},{x:2440,w:38,h:42},
+  {x:2680,w:38,h:42},{x:2725,w:38,h:42}
+];
+const blocks=[
+  {x:470,y:0,w:80,h:60},
+  {x:1220,y:0,w:100,h:45},
+  {x:1470,y:0,w:70,h:75},
+  {x:2020,y:0,w:110,h:50},
+  {x:2320,y:0,w:80,h:85},
+  {x:2850,y:0,w:120,h:55}
+];
 let camera=0,dead=false,holding=false;
 
 function resize(){
@@ -88,6 +103,19 @@ function spikePolygon(s){
 function accurateSpikeHit(s){
   return polygonsOverlap(playerPolygon(),spikePolygon(s));
 }
+function blockRect(b){
+  const floor=h-groundHeight;
+  return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+}
+function accurateBlockHit(b){
+  const r=blockRect(b);
+  const p=playerPolygon();
+  const q=[
+    {x:r.x,y:r.y},{x:r.x+r.w,y:r.y},
+    {x:r.x+r.w,y:r.y+r.h},{x:r.x,y:r.y+r.h}
+  ];
+  return polygonsOverlap(p,q);
+}
 
 let last=performance.now();
 function loop(now){
@@ -111,6 +139,9 @@ function update(dt){
   for(const s of spikes){
     if(accurateSpikeHit(s)){dead=true;break}
   }
+  for(const b of blocks){
+    if(accurateBlockHit(b)){dead=true;break}
+  }
 }
 function draw(){
   ctx.clearRect(0,0,w,h);
@@ -123,6 +154,13 @@ function draw(){
   const start=Math.floor(camera/50)*50;
   for(let x=start;x<camera+w+50;x+=50){
     ctx.strokeRect(x-camera,h-groundHeight+6,50,50);
+  }
+
+  for(const b of blocks){
+    const r=blockRect(b),x=r.x-camera;
+    if(x+r.w<0||x>w)continue;
+    ctx.fillStyle="#59616d";ctx.fillRect(x,r.y,r.w,r.h);
+    ctx.strokeStyle="#7b8796";ctx.lineWidth=2;ctx.strokeRect(x,r.y,r.w,r.h);
   }
 
   for(const s of spikes){
