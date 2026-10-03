@@ -7,18 +7,35 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="loading" class="menu">
+    <h1>GEOMETRY_MY</h1>
+    <div class="loader"></div>
+    <p id="loadingText">LOADING...</p>
+  </div>
+
   <canvas id="game" aria-label="Geometry_my 2D game"></canvas>
-  <div id="menu" class="menu">
+
+  <div id="menu" class="menu hidden">
     <h1>GEOMETRY_MY</h1>
     <button id="play" type="button">PLAY</button>
     <button id="levels" type="button">LEVEL SELECT</button>
   </div>
+
   <div id="levelMenu" class="menu hidden">
     <h2>LEVEL SELECT</h2>
     <button class="level" data-level="1" type="button">LEVEL 1</button>
     <button class="level" data-level="2" type="button">LEVEL 2 🔒</button>
     <button id="back" type="button">BACK</button>
   </div>
+
   <script src="game.js"></script>
+  <script>
+    window.addEventListener("load",()=>{
+      setTimeout(()=>{
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("menu").classList.remove("hidden");
+      },700);
+    });
+  </script>
 </body>
 </html>
