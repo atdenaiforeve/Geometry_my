@@ -24,7 +24,9 @@ const blocks=[
 let camera=0,dead=false,deathReason="",holding=false,playing=false;
 
 function resize(){
-  dpr=Math.min(devicePixelRatio||1,2);
+  // 1.5x is a good mobile-friendly quality/performance ceiling.
+  // The game is rendered at a fixed logical 960x540 resolution.
+  dpr=Math.min(devicePixelRatio||1,1.5);
   w=DESIGN_W;h=DESIGN_H;
   canvas.width=w*dpr;canvas.height=h*dpr;
   const scale=Math.min(innerWidth/DESIGN_W,innerHeight/DESIGN_H);
@@ -123,9 +125,15 @@ function accurateBlockHit(b){
 
 let last=performance.now();
 function loop(now){
-  const dt=Math.min((now-last)/1000,0.033);last=now;
-  if(playing)update(dt);
-  draw();
+  const dt=Math.min((now-last)/1000,0.033);
+  last=now;
+
+  // Do not spend frames rendering the game underneath the menus.
+  if(playing){
+    update(dt);
+    draw();
+  }
+
   requestAnimationFrame(loop);
 }
 function update(dt){
@@ -144,11 +152,23 @@ function update(dt){
 
   camera=Math.max(0,player.x-180);
 
+  // Cheap broad-phase first: only run the SAT collision test when shapes are nearby.
+  const playerRight=player.x+player.size;
+  const playerBottom=player.y+player.size;
+  const baseY=h-groundHeight;
+
   for(const s of spikes){
+    if(s.x>playerRight||s.x+s.w<player.x)continue;
+    if(baseY-s.h>playerBottom||baseY<player.y)continue;
     if(accurateSpikeHit(s)){dead=true;deathReason="spike";break}
   }
-  for(const b of blocks){
-    if(accurateBlockHit(b)){dead=true;deathReason="block";break}
+
+  if(!dead){
+    for(const b of blocks){
+      const r=blockRect(b);
+      if(r.x>playerRight||r.x+r.w<player.x||r.y>playerBottom||r.y+r.h<player.y)continue;
+      if(accurateBlockHit(b)){dead=true;deathReason="block";break}
+    }
   }
 }
 function draw(){
