@@ -89,3 +89,29 @@ canvas{display:block;image-rendering:auto}
 @keyframes jitter{0%{transform:translate(-2px,-2px)}50%{transform:translate(2px,-3px)}100%{transform:translate(0,-2px)}}
 @media(max-height:480px){.menu{gap:10px}.menu h1{margin-bottom:6px;letter-spacing:6px}.menu button{min-height:46px;font-size:16px}}
 @media(prefers-reduced-motion:reduce){.menu,.menu:before,.menu:after,.menu h1,.menu button,.menu button:first-of-type,.loader:after{animation:none}}
+
+
+/* ===== NEXUS LEVEL MAKER: simple first, powerful when needed ===== */
+.editorOverlay{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,1,7,.86);backdrop-filter:blur(8px)}
+.editorOverlay.hidden{display:none}
+.editorPanel{width:min(1100px,98vw);max-height:96vh;display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #3b3158;background:linear-gradient(180deg,#100b1d,#07050e);box-shadow:0 0 50px rgba(138,77,255,.3);border-radius:12px}
+.editorTop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.editorTop h2{margin:0;font-size:clamp(20px,4vw,32px);letter-spacing:3px}
+.editorTop p{margin:3px 0 0;font-size:11px;letter-spacing:1px;color:#9d98b5}
+.editorTop button,.editorTools button,.editorQuick button,.editorActions button,.editorModeTabs button{min-height:42px;padding:7px 12px;border:1px solid #3b3158;background:#151024;color:#eef2ff;border-radius:7px;font:700 12px system-ui;letter-spacing:1px}
+.editorModeTabs,.editorTools,.editorQuick,.editorActions{display:flex;gap:6px;flex-wrap:wrap}
+.editorModeTabs button{flex:1;min-width:90px}
+.editorModeTabs .active,.editorTools .active{background:linear-gradient(120deg,#00e5ff,#8a4dff,#ff2e93);color:#05030a;border-color:#fff}
+.editorTools button{flex:1;min-width:74px}
+.editorQuick button{min-width:64px}
+.editorCanvasWrap{width:100%;overflow:hidden;border:1px solid #302743;border-radius:7px;background:#07050e;touch-action:none}
+#editorCanvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:none}
+.editorActions button{flex:1}
+.editorActions button:first-child{background:linear-gradient(120deg,#00e5ff,#8a4dff);color:#05030a}
+@media(max-width:650px){
+  .editorPanel{padding:7px;gap:6px}
+  .editorTop p{display:none}
+  .editorTools button,.editorQuick button,.editorModeTabs button{min-height:38px;font-size:10px;padding:5px 7px}
+  .editorQuick button{min-width:50px}
+  .editorActions button{min-height:44px}
+}
