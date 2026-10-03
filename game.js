@@ -302,8 +302,17 @@ reset();requestAnimationFrame(loop);
 const CREATOR_PASSWORD="NEXUS-MAKER";
 let editorMode=false;
 let editorTool="block";
+let editorModeTab="build";
 let editorCamera=0;
+let editorZoom=1;
+let editorGridOn=true;
+let editorSnapOn=true;
 let editorObjects={blocks:[],spikes:[]};
+let editorHistory=[];
+let editorRedoStack=[];
+let editorSelected=null;
+let editorDragging=false;
+let editorLastPointer=null;
 let editorLevelLoaded=false;
 
 const passwordMenu=document.getElementById("passwordMenu");
@@ -373,6 +382,11 @@ function openEditor(){
   playing=false;
   editorMode=true;
   editorCamera=0;
+  editorZoom=1;
+  editorModeTab="build";
+  editorSelected=null;
+  editorHistory=[];
+  editorRedoStack=[];
   loadCreatorLevel();
   showOverlay(editorMenu);
   resizeEditor();
@@ -404,36 +418,124 @@ function editorPoint(e){
   };
 }
 function snap(n){return Math.round(n/20)*20}
-function placeEditorObject(e){
-  const p=editorPoint(e);
-  const x=Math.max(0,snap(p.x));
+function editorSnapshot(){return JSON.stringify(editorObjects)}
+function restoreEditorSnapshot(s){
+  try{
+    const d=JSON.parse(s);
+    editorObjects={
+      blocks:Array.isArray(d.blocks)?d.blocks.map(o=>({...o})):[],
+      spikes:Array.isArray(d.spikes)?d.spikes.map(o=>({...o})):[]
+    };
+    editorSelected=null;
+  }catch(e){}
+}
+function pushEditorHistory(){
+  editorHistory.push(editorSnapshot());
+  if(editorHistory.length>60)editorHistory.shift();
+  editorRedoStack=[];
+}
+function undoEditor(){
+  if(!editorHistory.length)return;
+  editorRedoStack.push(editorSnapshot());
+  restoreEditorSnapshot(editorHistory.pop());
+  drawEditor();
+}
+function redoEditor(){
+  if(!editorRedoStack.length)return;
+  editorHistory.push(editorSnapshot());
+  restoreEditorSnapshot(editorRedoStack.pop());
+  drawEditor();
+}
+function editorWorldPoint(e){
+  const rect=editorCanvas.getBoundingClientRect();
+  const viewW=rect.width;
+  const viewH=viewW*DESIGN_H/DESIGN_W;
+  return {
+    x:(e.clientX-rect.left)*(DESIGN_W/rect.width)/editorZoom+editorCamera,
+    y:(e.clientY-rect.top)*(DESIGN_H/viewH)/editorZoom
+  };
+}
+function editorHitObject(p){
   const floor=DESIGN_H-groundHeight;
-  if(editorTool==="spike"){
-    const existing=editorObjects.spikes.findIndex(s=>Math.abs(s.x-x)<24);
-    if(existing>=0)editorObjects.spikes.splice(existing,1);
-    else editorObjects.spikes.push({x,w:38,h:42});
-  }else if(editorTool==="block"){
-    const w=80,h=45;
-    const top=Math.min(floor-h,Math.max(40,snap(p.y)));
-    const y=Math.max(0,Math.round((floor-h-top)/20)*20);
-    editorObjects.blocks.push({x,y,w,h});
+  for(let i=editorObjects.spikes.length-1;i>=0;i--){
+    const s=editorObjects.spikes[i];
+    if(p.x>=s.x-12&&p.x<=s.x+s.w+12&&p.y>=floor-s.h-12&&p.y<=floor+12)return {type:"spike",index:i};
+  }
+  for(let i=editorObjects.blocks.length-1;i>=0;i--){
+    const b=editorObjects.blocks[i],r={x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+    if(p.x>=r.x-8&&p.x<=r.x+r.w+8&&p.y>=r.y-8&&p.y<=r.y+r.h+8)return {type:"block",index:i};
+  }
+  return null;
+}
+function editorDeleteHit(hit){
+  if(!hit)return;
+  pushEditorHistory();
+  if(hit.type==="spike")editorObjects.spikes.splice(hit.index,1);
+  else editorObjects.blocks.splice(hit.index,1);
+  editorSelected=null;
+}
+function placeEditorObject(e){
+  const p=editorWorldPoint(e);
+  const grid=editorSnapOn?20:4;
+  const x=Math.max(0,Math.round(p.x/grid)*grid);
+  const floor=DESIGN_H-groundHeight;
+
+  if(editorModeTab==="edit"||editorModeTab==="delete"){
+    const hit=editorHitObject(p);
+    if(editorModeTab==="delete"){editorDeleteHit(hit);drawEditor();return}
+    editorSelected=hit;
+    editorDragging=!!hit;
+    editorLastPointer=p;
+    drawEditor();
+    return;
+  }
+
+  pushEditorHistory();
+  if(editorTool==="erase"){
+    editorDeleteHit(editorHitObject(p));
+  }else if(editorTool==="spike"){
+    editorObjects.spikes.push({x,w:38,h:42});
   }else{
-    const si=editorObjects.spikes.findIndex(s=>Math.abs(s.x-x)<30);
-    if(si>=0){editorObjects.spikes.splice(si,1);return}
-    const bi=editorObjects.blocks.findIndex(b=>{
-      const r={x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
-      return x>=r.x-20&&x<=r.x+r.w+20&&p.y>=r.y-20&&p.y<=r.y+r.h+20;
-    });
-    if(bi>=0)editorObjects.blocks.splice(bi,1);
+    const presets={
+      block:{w:80,h:45,style:"core"},
+      platform:{w:120,h:28,style:"edge"},
+      energy:{w:80,h:45,style:"energy"},
+      reality:{w:100,h:55,style:"reality"}
+    };
+    const q=presets[editorTool]||presets.block;
+    const top=Math.max(20,Math.min(floor-q.h,Math.round(p.y/grid)*grid));
+    editorObjects.blocks.push({x,y:Math.max(0,Math.round((floor-q.h-top)/grid)*grid),w:q.w,h:q.h,style:q.style});
   }
   drawEditor();
 }
+function moveSelectedEditor(e){
+  if(!editorDragging||!editorSelected)return;
+  const p=editorWorldPoint(e);
+  const dx=p.x-editorLastPointer.x,dy=p.y-editorLastPointer.y;
+  const grid=editorSnapOn?20:4;
+  if(editorSelected.type==="spike"){
+    const s=editorObjects.spikes[editorSelected.index];
+    if(s){s.x=Math.max(0,Math.round((s.x+dx)/grid)*grid)}
+  }else{
+    const b=editorObjects.blocks[editorSelected.index];
+    if(b){
+      b.x=Math.max(0,Math.round((b.x+dx)/grid)*grid);
+      b.y=Math.max(0,Math.round((b.y-dy)/grid)*grid);
+    }
+  }
+  editorLastPointer=p;
+  drawEditor();
+}
+function finishEditorDrag(){editorDragging=false}
 function drawEditor(){
   const size=editorSize();
   const scale=size.width/DESIGN_W;
   ectx.setTransform(scale,0,0,scale,0,0);
   ectx.clearRect(0,0,DESIGN_W,DESIGN_H);
-  ectx.fillStyle="#10131c";ectx.fillRect(0,0,DESIGN_W,DESIGN_H);
+  ectx.fillStyle="#07050e";ectx.fillRect(0,0,DESIGN_W,DESIGN_H);
+  ectx.save();
+  ectx.scale(editorZoom,editorZoom);
+  ectx.translate(-editorCamera/editorZoom,0);
   ectx.fillStyle="#252b38";ectx.fillRect(0,DESIGN_H-groundHeight,DESIGN_W,groundHeight);
   ectx.strokeStyle="#303b4d";ectx.lineWidth=1;
   for(let x=Math.floor(editorCamera/20)*20;x<editorCamera+DESIGN_W+20;x+=20){
@@ -460,7 +562,25 @@ function drawEditor(){
     ectx.fillStyle="#e94b5f";ectx.fill();
   }
   ectx.fillStyle="#f2f6ff";ectx.font="bold 14px system-ui";ectx.textAlign="left";
-  ectx.fillText("X: "+Math.round(editorCamera)+"   TOOL: "+editorTool.toUpperCase(),12,24);
+  if(editorSelected){
+    const floor=DESIGN_H-groundHeight;
+    let r=null;
+    if(editorSelected.type==="block"){
+      const b=editorObjects.blocks[editorSelected.index];
+      if(b)r={x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+    }else{
+      const s=editorObjects.spikes[editorSelected.index];
+      if(s)r={x:s.x,y:floor-s.h,w:s.w,h:s.h};
+    }
+    if(r){
+      ectx.strokeStyle="#ffffff";ectx.lineWidth=3/editorZoom;
+      ectx.strokeRect(r.x-editorCamera-4,r.y-4,r.w+8,r.h+8);
+    }
+  }
+  ectx.restore();
+  ectx.setTransform(scale,0,0,scale,0,0);
+  ectx.fillStyle="#f2f6ff";ectx.font="bold 14px system-ui";ectx.textAlign="left";
+  ectx.fillText("X: "+Math.round(editorCamera)+"  "+editorModeTab.toUpperCase()+"  "+editorTool.toUpperCase(),12,24);
 }
 function saveCreatorLevel(){
   localStorage.setItem("nexusCreatorLevel",JSON.stringify(editorObjects));
@@ -496,13 +616,40 @@ document.getElementById("cancelCreator").addEventListener("click",()=>{
 });
 creatorPassword.addEventListener("keydown",e=>{if(e.key==="Enter")unlockCreator()});
 document.getElementById("closeEditor").addEventListener("click",closeEditor);
-document.querySelectorAll(".editorTools .tool").forEach(b=>b.addEventListener("click",()=>setEditorTool(b.dataset.tool)));
+document.querySelectorAll(".editorTools .tool").forEach(b=>b.addEventListener("click",()=>{
+  setEditorTool(b.dataset.tool);
+  editorModeTab="build";
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="build"));
+}));
+document.querySelectorAll(".modeTab").forEach(b=>b.addEventListener("click",()=>{
+  editorModeTab=b.dataset.mode;
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x===b));
+  document.getElementById("editorStatus").textContent=editorModeTab==="build"?"BUILD · choose an object, then tap the grid":editorModeTab==="edit"?"EDIT · tap an object to select and drag it":"DELETE · tap an object to remove it";
+}));
+document.getElementById("editorUndo").addEventListener("click",undoEditor);
+document.getElementById("editorRedo").addEventListener("click",redoEditor);
+document.getElementById("editorGrid").addEventListener("click",e=>{
+  editorGridOn=!editorGridOn;e.target.textContent="GRID: "+(editorGridOn?"ON":"OFF");drawEditor();
+});
+document.getElementById("editorSnap").addEventListener("click",e=>{
+  editorSnapOn=!editorSnapOn;e.target.textContent="SNAP: "+(editorSnapOn?"ON":"OFF");
+});
+document.getElementById("editorZoomOut").addEventListener("click",()=>{editorZoom=Math.max(.65,editorZoom-.15);drawEditor()});
+document.getElementById("editorZoomIn").addEventListener("click",()=>{editorZoom=Math.min(1.8,editorZoom+.15);drawEditor()});
 document.getElementById("editorLeft").addEventListener("click",()=>{editorCamera=Math.max(0,editorCamera-100);drawEditor()});
 document.getElementById("editorRight").addEventListener("click",()=>{editorCamera=Math.min(19000,editorCamera+100);drawEditor()});
 document.getElementById("saveLevel").addEventListener("click",saveCreatorLevel);
 document.getElementById("testLevel").addEventListener("click",testCreatorLevel);
 document.getElementById("clearLevel").addEventListener("click",clearCreatorLevel);
-editorCanvas.addEventListener("pointerdown",e=>{e.preventDefault();placeEditorObject(e)});
+editorCanvas.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  editorLastPointer=editorWorldPoint(e);
+  placeEditorObject(e);
+  editorCanvas.setPointerCapture?.(e.pointerId);
+});
+editorCanvas.addEventListener("pointermove",e=>{if(editorModeTab==="edit"&&editorDragging){e.preventDefault();moveSelectedEditor(e)}});
+editorCanvas.addEventListener("pointerup",finishEditorDrag);
+editorCanvas.addEventListener("pointercancel",finishEditorDrag);
 addEventListener("resize",()=>{if(editorMode){resizeEditor();drawEditor()}});
 
 // Keep the normal level select working with the current saved creator level.
