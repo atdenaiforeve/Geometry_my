@@ -302,24 +302,23 @@ function update(dt){
       if(!accurateBlockHit(b))continue;
 
       const horizontalOverlap=playerRight>r.x && player.x<r.x+r.w;
+      // Only a clean downward landing from above is safe.
+      // Front/back/side hits and underside hits are fatal.
       if(horizontalOverlap && previousBottom<=r.y+4 && player.vy>=0){
         player.y=r.y-player.size;
         player.vy=0;
         player.onGround=true;
         player.rotation=Math.round(player.rotation/(Math.PI/2))*(Math.PI/2);
-      }else if(previousY>=r.y+r.h-4 && player.vy<0){
-        player.y=r.y+r.h;
-        player.vy=0;
       }else{
-        if(player.x<r.x)player.x=r.x-player.size;
-        else if(player.x>r.x)player.x=r.x+r.w;
-        player.vy=0;
+        deathReason="block";
+        return true;
       }
     }
+    return false;
   }
 
   if(damageFromSpikes())dead=true;
-  if(!dead)solidBlocks();
+  if(!dead && solidBlocks())dead=true;
 }
 function draw(){
   ctx.clearRect(0,0,w,h);
