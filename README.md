@@ -56,13 +56,6 @@ The goal is to make level creation comfortable on both mobile and computer.
 
 Creators can build their own levels and test them before publishing.
 
-The final stage will contain the game's main lore and deeper Nexus story.
-
-## 🌌 The Nexus
-
-The Nexus is the central connection where different realities meet.
-
-Future levels can explore different realities and allow visual ideas from different worlds to appear throughout the game.
 
 ## 🚧 Development Status
 
