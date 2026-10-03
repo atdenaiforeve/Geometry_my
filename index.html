@@ -19,6 +19,18 @@
     <h1>INTO THE NEXUS</h1>
     <button id="play" type="button">PLAY</button>
     <button id="creator" type="button">LEVEL MAKER</button>
+    <button id="customize" type="button">CUSTOMIZE</button>
+  </div>
+
+  <div id="customizeMenu" class="menu hidden">
+    <h2>CUSTOMIZE CHARACTER</h2>
+    <div class="characterPreview" aria-label="Character preview"><canvas id="characterPreviewCanvas" width="220" height="220"></canvas></div>
+    <div class="colorControls">
+      <label for="characterColor">CHARACTER COLOUR</label>
+      <input id="characterColor" type="color" value="#4dd7ff" aria-label="Character colour">
+      <span id="characterColorValue">#4DD7FF</span>
+    </div>
+    <button id="customizeBack" type="button">BACK</button>
   </div>
 
   <div id="levelMenu" class="menu hidden">
