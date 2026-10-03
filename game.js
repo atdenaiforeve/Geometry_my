@@ -21,7 +21,7 @@ const blocks=[
   {x:2320,y:0,w:80,h:45},
   {x:2850,y:0,w:120,h:40}
 ];
-let camera=0,dead=false,holding=false,playing=false;
+let camera=0,dead=false,deathReason="",holding=false,playing=false;
 
 function resize(){
   dpr=Math.min(devicePixelRatio||1,2);
@@ -41,7 +41,7 @@ addEventListener("resize",resize);resize();
 function startGame(){playing=true;document.getElementById("menu").classList.add("hidden");document.getElementById("levelMenu").classList.add("hidden");reset()}
 function reset(){
   player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;player.rotation=0;
-  camera=0;dead=false;
+  camera=0;dead=false;deathReason="";
 }
 function doJump(){
   if(dead){reset();return}
@@ -143,10 +143,10 @@ function update(dt){
   camera=Math.max(0,player.x-180);
 
   for(const s of spikes){
-    if(accurateSpikeHit(s)){dead=true;break}
+    if(accurateSpikeHit(s)){dead=true;deathReason="spike";break}
   }
   for(const b of blocks){
-    if(accurateBlockHit(b)){dead=true;break}
+    if(accurateBlockHit(b)){dead=true;deathReason="block";break}
   }
 }
 function draw(){
@@ -193,7 +193,7 @@ function draw(){
   if(dead){
     ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,0,w,h);
     ctx.fillStyle="#fff";ctx.textAlign="center";
-    ctx.font="bold 30px system-ui";ctx.fillText("You hit a spike!",w/2,h/2-10);
+    ctx.font="bold 30px system-ui";ctx.fillText(deathReason==="block"?"You hit a block!":"You hit a spike!",w/2,h/2-10);
     ctx.font="18px system-ui";ctx.fillText("Tap or press Space to restart",w/2,h/2+28);
   }
 }
