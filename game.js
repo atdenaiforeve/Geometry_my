@@ -26,6 +26,50 @@ function doJump(){
 addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();doJump()}});
 canvas.addEventListener("pointerdown",e=>{e.preventDefault();doJump()});
 
+// Accurate geometry collision: the player is a rectangle and each spike is a triangle.
+// SAT (Separating Axis Theorem) checks the actual shapes instead of loose boxes.
+function project(poly,axis){
+  let min=Infinity,max=-Infinity;
+  for(const p of poly){
+    const v=p.x*axis.x+p.y*axis.y;
+    if(v<min)min=v;if(v>max)max=v;
+  }
+  return {min,max};
+}
+function polygonsOverlap(a,b){
+  for(const poly of [a,b]){
+    for(let i=0;i<poly.length;i++){
+      const p1=poly[i],p2=poly[(i+1)%poly.length];
+      const edge={x:p2.x-p1.x,y:p2.y-p1.y};
+      const axis={x:-edge.y,y:edge.x};
+      const len=Math.hypot(axis.x,axis.y);
+      axis.x/=len;axis.y/=len;
+      const pa=project(a,axis),pb=project(b,axis);
+      if(pa.max<pb.min||pb.max<pa.min)return false;
+    }
+  }
+  return true;
+}
+function playerPolygon(){
+  return [
+    {x:player.x,y:player.y},
+    {x:player.x+player.size,y:player.y},
+    {x:player.x+player.size,y:player.y+player.size},
+    {x:player.x,y:player.y+player.size}
+  ];
+}
+function spikePolygon(s){
+  const baseY=h-groundHeight;
+  return [
+    {x:s.x,y:baseY},
+    {x:s.x+s.w/2,y:baseY-s.h},
+    {x:s.x+s.w,y:baseY}
+  ];
+}
+function accurateSpikeHit(s){
+  return polygonsOverlap(playerPolygon(),spikePolygon(s));
+}
+
 let last=performance.now();
 function loop(now){
   const dt=Math.min((now-last)/1000,0.033);last=now;
@@ -44,28 +88,22 @@ function update(dt){
   camera=Math.max(0,player.x-180);
 
   for(const s of spikes){
-    const sx=s.x;
-    const hit=player.x+player.size>sx+5&&player.x<sx+s.w-5&&
-      player.y+player.size>h-groundHeight-s.h+5;
-    if(hit){dead=true;break}
+    if(accurateSpikeHit(s)){dead=true;break}
   }
 }
 function draw(){
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle="#171a22";ctx.fillRect(0,0,w,h);
 
-  // ground
   ctx.fillStyle="#303640";ctx.fillRect(0,h-groundHeight,w,groundHeight);
   ctx.fillStyle="#59616d";ctx.fillRect(0,h-groundHeight,w,6);
 
-  // repeating blocks
   ctx.strokeStyle="#3d4550";ctx.lineWidth=2;
   const start=Math.floor(camera/50)*50;
   for(let x=start;x<camera+w+50;x+=50){
     ctx.strokeRect(x-camera,h-groundHeight+6,50,50);
   }
 
-  // spikes
   for(const s of spikes){
     const x=s.x-camera;
     if(x<-s.w||x>w)continue;
@@ -77,7 +115,6 @@ function draw(){
     ctx.fillStyle="#e94b5f";ctx.fill();
   }
 
-  // player
   const px=player.x-camera;
   ctx.fillStyle="#4dd7ff";
   ctx.fillRect(px,player.y,player.size,player.size);
