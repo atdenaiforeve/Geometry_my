@@ -5,7 +5,7 @@ const DESIGN_W=960,DESIGN_H=540;
 const player={x:120,y:0,size:34,vy:0,onGround:false,rotation:0};
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
-const spikes=[
+const baseSpikes=[
   {x:650,w:38,h:42},{x:850,w:38,h:42},
   {x:1080,w:38,h:42},{x:1125,w:38,h:42},
   {x:1370,w:38,h:42},{x:1580,w:38,h:42},
@@ -13,7 +13,7 @@ const spikes=[
   {x:2180,w:38,h:42},{x:2440,w:38,h:42},
   {x:2680,w:38,h:42},{x:2725,w:38,h:42}
 ];
-const blocks=[
+const baseBlocks=[
   {x:470,y:0,w:80,h:45},
   {x:1220,y:0,w:100,h:35},
   {x:1470,y:0,w:70,h:45},
@@ -21,6 +21,8 @@ const blocks=[
   {x:2320,y:0,w:80,h:45},
   {x:2850,y:0,w:120,h:40}
 ];
+let spikes=baseSpikes.map(o=>({...o}));
+let blocks=baseBlocks.map(o=>({...o}));
 let camera=0,dead=false,deathReason="",holding=false,playing=false;
 
 function resize(){
@@ -66,7 +68,10 @@ addEventListener("keydown",e=>{
 addEventListener("keyup",e=>{
   if(e.code==="Space"||e.code==="ArrowUp")holding=false;
 });
-canvas.addEventListener("pointerdown",e=>{e.preventDefault();holding=true;doJump()});
+canvas.addEventListener("pointerdown",e=>{
+  if(editorMode){return;}
+  e.preventDefault();holding=true;doJump();
+});
 addEventListener("pointerup",()=>holding=false);
 addEventListener("pointercancel",()=>holding=false);
 
@@ -129,7 +134,9 @@ function loop(now){
   last=now;
 
   // Do not spend frames rendering the game underneath the menus.
-  if(playing){
+  if(editorMode){
+    drawEditor();
+  }else if(playing){
     update(dt);
     draw();
   }
@@ -239,3 +246,228 @@ document.querySelectorAll(".level").forEach(button=>{
   });
 });
 reset();requestAnimationFrame(loop);
+
+
+/* ===== Creator level maker =====
+   This is a creator lock, not real security: the password is part of the
+   browser game code. It is intended to keep normal players out of the editor.
+*/
+const CREATOR_PASSWORD="NEXUS-MAKER";
+let editorMode=false;
+let editorTool="block";
+let editorCamera=0;
+let editorObjects={blocks:[],spikes:[]};
+let editorLevelLoaded=false;
+
+const passwordMenu=document.getElementById("passwordMenu");
+const editorMenu=document.getElementById("editorMenu");
+const creatorPassword=document.getElementById("creatorPassword");
+const passwordError=document.getElementById("passwordError");
+const editorCanvas=document.getElementById("editorCanvas");
+const ectx=editorCanvas.getContext("2d");
+
+function showOverlay(el){
+  el.classList.remove("hidden");
+  el.style.display="flex";
+}
+function hideOverlay(el){
+  el.classList.add("hidden");
+  el.style.display="none";
+}
+function cloneObjects(){
+  return {
+    blocks:blocks.map(o=>({...o})),
+    spikes:spikes.map(o=>({...o}))
+  };
+}
+function loadCreatorLevel(){
+  try{
+    const saved=localStorage.getItem("nexusCreatorLevel");
+    if(saved){
+      const data=JSON.parse(saved);
+      if(Array.isArray(data.blocks)&&Array.isArray(data.spikes)){
+        editorObjects={
+          blocks:data.blocks.filter(validBlock).map(o=>({...o})),
+          spikes:data.spikes.filter(validSpike).map(o=>({...o}))
+        };
+        return;
+      }
+    }
+  }catch(e){}
+  editorObjects=cloneObjects();
+}
+function validBlock(o){
+  return o&&Number.isFinite(o.x)&&Number.isFinite(o.y)&&Number.isFinite(o.w)&&Number.isFinite(o.h)
+    &&o.w>0&&o.h>0&&o.w<=300&&o.h<=200&&o.x>=0&&o.x<=20000;
+}
+function validSpike(o){
+  return o&&Number.isFinite(o.x)&&Number.isFinite(o.w)&&Number.isFinite(o.h)
+    &&o.w>0&&o.h>0&&o.w<=120&&o.h<=150&&o.x>=0&&o.x<=20000;
+}
+function enterCreator(){
+  creatorPassword.value="";
+  passwordError.textContent="";
+  hideOverlay(document.getElementById("menu"));
+  hideOverlay(document.getElementById("levelMenu"));
+  showOverlay(passwordMenu);
+  setTimeout(()=>creatorPassword.focus(),50);
+}
+function unlockCreator(){
+  if(creatorPassword.value===CREATOR_PASSWORD){
+    hideOverlay(passwordMenu);
+    openEditor();
+  }else{
+    passwordError.textContent="ACCESS DENIED";
+    creatorPassword.value="";
+    creatorPassword.focus();
+  }
+}
+function openEditor(){
+  playing=false;
+  editorMode=true;
+  editorCamera=0;
+  loadCreatorLevel();
+  showOverlay(editorMenu);
+  resizeEditor();
+  drawEditor();
+}
+function closeEditor(){
+  editorMode=false;
+  hideOverlay(editorMenu);
+  showOverlay(document.getElementById("menu"));
+}
+function resizeEditor(){
+  const rect=editorCanvas.getBoundingClientRect();
+  const scale=Math.min(devicePixelRatio||1,1.5);
+  editorCanvas.width=Math.max(1,Math.floor(rect.width*scale));
+  editorCanvas.height=Math.max(1,Math.floor((rect.width*DESIGN_H/DESIGN_W)*scale));
+  ectx.setTransform(scale,0,0,scale,0,0);
+}
+function editorSize(){
+  const rect=editorCanvas.getBoundingClientRect();
+  return {width:rect.width,height:rect.width*DESIGN_H/DESIGN_W};
+}
+function editorPoint(e){
+  const rect=editorCanvas.getBoundingClientRect();
+  const scaleX=DESIGN_W/rect.width;
+  const scaleY=DESIGN_H/(rect.width*DESIGN_H/DESIGN_W);
+  return {
+    x:(e.clientX-rect.left)*scaleX+editorCamera,
+    y:(e.clientY-rect.top)*scaleY
+  };
+}
+function snap(n){return Math.round(n/20)*20}
+function placeEditorObject(e){
+  const p=editorPoint(e);
+  const x=Math.max(0,snap(p.x));
+  const floor=DESIGN_H-groundHeight;
+  if(editorTool==="spike"){
+    const existing=editorObjects.spikes.findIndex(s=>Math.abs(s.x-x)<24);
+    if(existing>=0)editorObjects.spikes.splice(existing,1);
+    else editorObjects.spikes.push({x,w:38,h:42});
+  }else if(editorTool==="block"){
+    const w=80,h=45;
+    const top=Math.min(floor-h,Math.max(40,snap(p.y)));
+    const y=Math.max(0,Math.round((floor-h-top)/20)*20);
+    editorObjects.blocks.push({x,y,w,h});
+  }else{
+    const si=editorObjects.spikes.findIndex(s=>Math.abs(s.x-x)<30);
+    if(si>=0){editorObjects.spikes.splice(si,1);return}
+    const bi=editorObjects.blocks.findIndex(b=>{
+      const r={x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+      return x>=r.x-20&&x<=r.x+r.w+20&&p.y>=r.y-20&&p.y<=r.y+r.h+20;
+    });
+    if(bi>=0)editorObjects.blocks.splice(bi,1);
+  }
+  drawEditor();
+}
+function drawEditor(){
+  const size=editorSize();
+  const scale=size.width/DESIGN_W;
+  ectx.setTransform(scale,0,0,scale,0,0);
+  ectx.clearRect(0,0,DESIGN_W,DESIGN_H);
+  ectx.fillStyle="#10131c";ectx.fillRect(0,0,DESIGN_W,DESIGN_H);
+  ectx.fillStyle="#252b38";ectx.fillRect(0,DESIGN_H-groundHeight,DESIGN_W,groundHeight);
+  ectx.strokeStyle="#303b4d";ectx.lineWidth=1;
+  for(let x=Math.floor(editorCamera/20)*20;x<editorCamera+DESIGN_W+20;x+=20){
+    ectx.beginPath();ectx.moveTo(x-editorCamera,0);ectx.lineTo(x-editorCamera,DESIGN_H);ectx.stroke();
+  }
+  for(let y=0;y<DESIGN_H;y+=20){
+    ectx.beginPath();ectx.moveTo(0,y);ectx.lineTo(DESIGN_W,y);ectx.stroke();
+  }
+  ectx.strokeStyle="#4dd7ff";ectx.lineWidth=3;
+  ectx.beginPath();ectx.moveTo(0,DESIGN_H-groundHeight);ectx.lineTo(DESIGN_W,DESIGN_H-groundHeight);ectx.stroke();
+
+  const floor=DESIGN_H-groundHeight;
+  for(const b of editorObjects.blocks){
+    const r={x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+    const x=r.x-editorCamera;
+    if(x+r.w<0||x>DESIGN_W)continue;
+    ectx.fillStyle="#59616d";ectx.fillRect(x,r.y,r.w,r.h);
+    ectx.strokeStyle="#7be4ff";ectx.lineWidth=2;ectx.strokeRect(x,r.y,r.w,r.h);
+  }
+  for(const s of editorObjects.spikes){
+    const x=s.x-editorCamera;
+    if(x<-s.w||x>DESIGN_W)continue;
+    ectx.beginPath();ectx.moveTo(x,floor);ectx.lineTo(x+s.w/2,floor-s.h);ectx.lineTo(x+s.w,floor);ectx.closePath();
+    ectx.fillStyle="#e94b5f";ectx.fill();
+  }
+  ectx.fillStyle="#f2f6ff";ectx.font="bold 14px system-ui";ectx.textAlign="left";
+  ectx.fillText("X: "+Math.round(editorCamera)+"   TOOL: "+editorTool.toUpperCase(),12,24);
+}
+function saveCreatorLevel(){
+  localStorage.setItem("nexusCreatorLevel",JSON.stringify(editorObjects));
+  editorLevelLoaded=true;
+  document.getElementById("editorStatus").textContent="LEVEL SAVED · "+editorObjects.blocks.length+" blocks · "+editorObjects.spikes.length+" spikes";
+}
+function clearCreatorLevel(){
+  editorObjects={blocks:[],spikes:[]};
+  drawEditor();
+  document.getElementById("editorStatus").textContent="EMPTY LEVEL · choose a tool and place objects";
+}
+function testCreatorLevel(){
+  spikes=editorObjects.spikes.map(o=>({...o}));
+  blocks=editorObjects.blocks.map(o=>({...o}));
+  if(!spikes.length&&!blocks.length){
+    document.getElementById("editorStatus").textContent="ADD AT LEAST ONE BLOCK OR SPIKE FIRST";
+    return;
+  }
+  hideOverlay(editorMenu);
+  editorMode=false;
+  startGame();
+}
+function setEditorTool(tool){
+  editorTool=tool;
+  document.querySelectorAll(".editorTools .tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
+  document.getElementById("editorStatus").textContent=tool.toUpperCase()+" selected · tap the grid to place";
+}
+
+document.getElementById("creator").addEventListener("click",enterCreator);
+document.getElementById("unlockCreator").addEventListener("click",unlockCreator);
+document.getElementById("cancelCreator").addEventListener("click",()=>{
+  hideOverlay(passwordMenu);showOverlay(document.getElementById("menu"));
+});
+creatorPassword.addEventListener("keydown",e=>{if(e.key==="Enter")unlockCreator()});
+document.getElementById("closeEditor").addEventListener("click",closeEditor);
+document.querySelectorAll(".editorTools .tool").forEach(b=>b.addEventListener("click",()=>setEditorTool(b.dataset.tool)));
+document.getElementById("editorLeft").addEventListener("click",()=>{editorCamera=Math.max(0,editorCamera-100);drawEditor()});
+document.getElementById("editorRight").addEventListener("click",()=>{editorCamera=Math.min(19000,editorCamera+100);drawEditor()});
+document.getElementById("saveLevel").addEventListener("click",saveCreatorLevel);
+document.getElementById("testLevel").addEventListener("click",testCreatorLevel);
+document.getElementById("clearLevel").addEventListener("click",clearCreatorLevel);
+editorCanvas.addEventListener("pointerdown",e=>{e.preventDefault();placeEditorObject(e)});
+addEventListener("resize",()=>{if(editorMode){resizeEditor();drawEditor()}});
+
+// Keep the normal level select working with the current saved creator level.
+document.querySelector('.level[data-level="1"]').addEventListener("click",()=>{
+  const saved=localStorage.getItem("nexusCreatorLevel");
+  if(saved){
+    try{
+      const data=JSON.parse(saved);
+      if(Array.isArray(data.blocks)&&Array.isArray(data.spikes)){
+        blocks=data.blocks.filter(validBlock).map(o=>({...o}));
+        spikes=data.spikes.filter(validSpike).map(o=>({...o}));
+      }
+    }catch(e){}
+  }
+});
