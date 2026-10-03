@@ -26,6 +26,7 @@ let blocks=baseBlocks.map(o=>({...o}));
 let camera=0,dead=false,deathReason="",holding=false,playing=false;
 let levelStartX=120;
 let creatorTestMode=false;
+let creatorTestEndX=3000;
 const SAVE_KEY="nexusProgress_v1";
 let progress={best:0};
 function loadProgress(){
@@ -43,7 +44,8 @@ function saveProgress(){
 function updateBestProgress(){
   const endX=3000;
   if(editorMode===false && creatorTestMode) updateCreatorCompletion();
-  const percent=Math.max(0,Math.min(100,Math.round(((player.x-levelStartX)/(endX-levelStartX))*100)));
+  const progressEndX=creatorTestMode?creatorTestEndX:3000;
+  const percent=Math.max(0,Math.min(100,Math.round(((player.x-levelStartX)/(progressEndX-levelStartX))*100)));
   if(percent>progress.best){
     progress.best=percent;
     saveProgress();
@@ -93,7 +95,7 @@ function startGame(){
   draw();
 }
 function updateCreatorCompletion(){
-  if(creatorTestMode && player.x>=3000){
+  if(creatorTestMode && player.x>=creatorTestEndX){
     creatorTestBeat=true;
     creatorTestMode=false;
     const status=document.getElementById("editorStatus");
@@ -610,14 +612,16 @@ function clearCreatorLevel(){
   document.getElementById("editorStatus").textContent="EMPTY LEVEL · choose a tool and place objects";
 }
 function testCreatorLevel(){
+  if(!editorObjects.spikes.length&&!editorObjects.blocks.length){
+    document.getElementById("editorStatus").textContent="ADD AT LEAST ONE BLOCK OR SPIKE FIRST";
+    return;
+  }
   spikes=editorObjects.spikes.map(o=>({...o}));
   blocks=editorObjects.blocks.map(o=>({...o}));
   creatorTestBeat=false;
   creatorTestMode=true;
-  if(!spikes.length&&!blocks.length){
-    document.getElementById("editorStatus").textContent="ADD AT LEAST ONE BLOCK OR SPIKE FIRST";
-    return;
-  }
+  const furthest=Math.max(120,...editorObjects.blocks.map(o=>o.x+o.w),...editorObjects.spikes.map(o=>o.x+o.w));
+  creatorTestEndX=Math.max(1000,furthest+300);
   hideOverlay(editorMenu);
   editorMode=false;
   startGame();
