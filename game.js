@@ -71,12 +71,24 @@ function resize(){
 addEventListener("resize",resize);resize();
 
 function startGame(){
+  // Start the selected level explicitly and remove every menu overlay.
   playing=true;
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("menu").style.display="none";
-  document.getElementById("levelMenu").classList.add("hidden");
-  document.getElementById("levelMenu").style.display="none";
+  editorMode=false;
+  const menu=document.getElementById("menu");
+  const levelMenu=document.getElementById("levelMenu");
+  const password=document.getElementById("passwordMenu");
+  const editor=document.getElementById("editorMenu");
+  [menu,levelMenu,password,editor].forEach(el=>{
+    if(el){
+      el.classList.add("hidden");
+      el.style.display="none";
+    }
+  });
+  spikes=spikes.map(o=>({...o}));
+  blocks=blocks.map(o=>({...o}));
   reset();
+  last=performance.now();
+  draw();
 }
 function reset(){
   player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;player.rotation=0;
@@ -270,8 +282,12 @@ document.getElementById("back").addEventListener("click",()=>{
   document.getElementById("menu").style.display="flex";
 });
 document.querySelectorAll(".level").forEach(button=>{
-  button.addEventListener("click",()=>{
-    if(button.dataset.level==="1")startGame();
+  button.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(button.dataset.level==="1"){
+      startGame();
+    }
   });
 });
 loadProgress();
