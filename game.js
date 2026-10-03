@@ -11,6 +11,8 @@ let paintGrid=Array(PAINT_SIZE*PAINT_SIZE).fill(null);
 let paintHistory=[];
 let paintEraser=false;
 let useProPaint=false;
+const CHARACTER_MODE_KEY="nexusCharacterMode_v1";
+let characterMode="auto";
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
 const baseSpikes=[
@@ -46,6 +48,14 @@ function loadCharacterColor(){
 function saveCharacterColor(){
   try{localStorage.setItem(CHARACTER_COLOR_KEY,characterColor)}catch(e){}
 }
+function loadCharacterMode(){
+  try{
+    const saved=localStorage.getItem(CHARACTER_MODE_KEY);
+    if(saved==="auto"||saved==="pro")characterMode=saved;
+    useProPaint=characterMode==="pro";
+  }catch(e){}
+}
+function saveCharacterMode(){try{localStorage.setItem(CHARACTER_MODE_KEY,characterMode)}catch(e){}}
 function loadCharacterPaint(){
   try{
     const saved=JSON.parse(localStorage.getItem(CHARACTER_PAINT_KEY)||"null");
@@ -268,24 +278,31 @@ function update(dt){
   updateBestProgress();
   updateCreatorCompletion();
 
-  // Cheap broad-phase first: only run the SAT collision test when shapes are nearby.
+  // Two explicit damage paths: spikes and blocks. Both built-in and creator objects
+  // use these same checks, so editor objects are real gameplay hazards.
   const playerRight=player.x+player.size;
   const playerBottom=player.y+player.size;
   const baseY=h-groundHeight;
 
-  for(const s of spikes){
-    if(s.x>playerRight||s.x+s.w<player.x)continue;
-    if(baseY-s.h>playerBottom||baseY<player.y)continue;
-    if(accurateSpikeHit(s)){dead=true;deathReason="spike";break}
+  function damageFromSpikes(){
+    for(const s of spikes){
+      if(s.x>playerRight||s.x+s.w<player.x)continue;
+      if(baseY-s.h>playerBottom||baseY<player.y)continue;
+      if(accurateSpikeHit(s)){deathReason="spike";return true}
+    }
+    return false;
   }
 
-  if(!dead){
+  function damageFromBlocks(){
     for(const b of blocks){
       const r=blockRect(b);
       if(r.x>playerRight||r.x+r.w<player.x||r.y>playerBottom||r.y+r.h<player.y)continue;
-      if(accurateBlockHit(b)){dead=true;deathReason="block";break}
+      if(accurateBlockHit(b)){deathReason="block";return true}
     }
+    return false;
   }
+
+  if(damageFromSpikes()||damageFromBlocks())dead=true;
 }
 function draw(){
   ctx.clearRect(0,0,w,h);
@@ -341,6 +358,7 @@ function draw(){
 }
 loadCharacterColor();
 loadCharacterPaint();
+loadCharacterMode();
 
 function drawPaintEditor(){
   const c=document.getElementById("paintCanvas"); if(!c)return;
@@ -372,7 +390,9 @@ function paintUndo(){
 }
 function switchCustomizeMode(mode){
   const pro=mode==="pro";
+  characterMode=pro?"pro":"auto";
   useProPaint=pro;
+  saveCharacterMode();
   document.getElementById("autoColorPanel").classList.toggle("hidden",pro);
   document.getElementById("proCreatePanel").classList.toggle("hidden",!pro);
   document.getElementById("autoColorMode").classList.toggle("active",!pro);
@@ -388,8 +408,7 @@ document.getElementById("customize").addEventListener("click",()=>{
   const value=document.getElementById("characterColorValue");
   if(input)input.value=characterColor;
   if(value)value.textContent=characterColor.toUpperCase();
-  switchCustomizeMode("auto");
-  drawCharacterPreview();
+  switchCustomizeMode(characterMode);\n  drawCharacterPreview();
 });
 document.getElementById("customizeBack").addEventListener("click",()=>{
   hideOverlay(document.getElementById("customizeMenu"));
@@ -408,7 +427,12 @@ document.getElementById("paintClear").addEventListener("click",()=>{
   paintHistory.push(paintSnapshot());paintGrid=Array(PAINT_SIZE*PAINT_SIZE).fill(null);saveCharacterPaint();drawPaintEditor();drawCharacterPreview();
 });
 document.getElementById("paintUndo").addEventListener("click",paintUndo);
-document.getElementById("paintDone").addEventListener("click",()=>switchCustomizeMode("auto"));
+document.getElementById("paintDone").addEventListener("click",()=>{
+  characterMode="pro";useProPaint=true;saveCharacterMode();saveCharacterPaint();
+  drawCharacterPreview();
+  hideOverlay(document.getElementById("customizeMenu"));
+  showOverlay(document.getElementById("menu"));
+});
 const paintCanvas=document.getElementById("paintCanvas");
 let painting=false;
 paintCanvas.addEventListener("pointerdown",e=>{e.preventDefault();paintHistory.push(paintSnapshot());painting=true;paintAtEvent(e);paintCanvas.setPointerCapture?.(e.pointerId)});
