@@ -6,7 +6,7 @@ const player={x:120,y:0,size:34,vy:0,onGround:false};
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
 const spikes=[{x:650,w:38,h:42},{x:850,w:38,h:42},{x:1080,w:38,h:42}];
-let camera=0,dead=false;
+let camera=0,dead=false,holding=false;
 
 function resize(){
   dpr=Math.min(devicePixelRatio||1,2);
@@ -31,8 +31,19 @@ function doJump(){
   if(dead){reset();return}
   if(player.onGround){player.vy=jump;player.onGround=false}
 }
-addEventListener("keydown",e=>{if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();doJump()}});
-canvas.addEventListener("pointerdown",e=>{e.preventDefault();doJump()});
+addEventListener("keydown",e=>{
+  if(e.code==="Space"||e.code==="ArrowUp"){
+    e.preventDefault();
+    holding=true;
+    doJump();
+  }
+});
+addEventListener("keyup",e=>{
+  if(e.code==="Space"||e.code==="ArrowUp")holding=false;
+});
+canvas.addEventListener("pointerdown",e=>{e.preventDefault();holding=true;doJump()});
+addEventListener("pointerup",()=>holding=false);
+addEventListener("pointercancel",()=>holding=false);
 
 // Accurate geometry collision: the player is a rectangle and each spike is a triangle.
 // SAT (Separating Axis Theorem) checks the actual shapes instead of loose boxes.
@@ -90,8 +101,10 @@ function update(dt){
   player.y+=player.vy*dt;
 
   const floor=h-groundHeight-player.size;
-  if(player.y>=floor){player.y=floor;player.vy=0;player.onGround=true}
-  else player.onGround=false;
+  if(player.y>=floor){
+    player.y=floor;player.vy=0;player.onGround=true;
+    if(holding)doJump();
+  }else player.onGround=false;
 
   camera=Math.max(0,player.x-180);
 
