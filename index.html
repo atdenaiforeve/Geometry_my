@@ -18,6 +18,7 @@
   <div id="menu" class="menu hidden">
     <h1>INTO THE NEXUS</h1>
     <button id="play" type="button">PLAY</button>
+    <button id="creator" type="button">LEVEL MAKER</button>
   </div>
 
   <div id="levelMenu" class="menu hidden">
@@ -25,6 +26,42 @@
     <button class="level" data-level="1" type="button">LEVEL 1 <span>BEST: 0% · FIRST FLIGHT</span></button>
     <button class="level" data-level="2" type="button">LEVEL 2 🔒 <span>LOCKED</span></button>
     <button id="back" type="button">BACK</button>
+  </div>
+
+  <div id="passwordMenu" class="menu hidden">
+    <h2>CREATOR ACCESS</h2>
+    <p>ENTER CREATOR PASSWORD</p>
+    <input id="creatorPassword" type="password" inputmode="text" autocomplete="off" maxlength="32" placeholder="PASSWORD">
+    <button id="unlockCreator" type="button">UNLOCK</button>
+    <button id="cancelCreator" type="button">BACK</button>
+    <p id="passwordError" class="errorText" aria-live="polite"></p>
+  </div>
+
+  <div id="editorMenu" class="editorOverlay hidden">
+    <div class="editorPanel">
+      <div class="editorTop">
+        <div>
+          <h2>LEVEL MAKER</h2>
+          <p id="editorStatus">BLOCK selected · tap the grid to place</p>
+        </div>
+        <button id="closeEditor" type="button">EXIT</button>
+      </div>
+      <div class="editorTools">
+        <button class="tool active" data-tool="block" type="button">BLOCK</button>
+        <button class="tool" data-tool="spike" type="button">SPIKE</button>
+        <button class="tool" data-tool="erase" type="button">ERASE</button>
+        <button id="editorLeft" type="button">◀ 100</button>
+        <button id="editorRight" type="button">100 ▶</button>
+      </div>
+      <div class="editorCanvasWrap">
+        <canvas id="editorCanvas" aria-label="Level maker canvas"></canvas>
+      </div>
+      <div class="editorActions">
+        <button id="saveLevel" type="button">SAVE LEVEL</button>
+        <button id="testLevel" type="button">TEST LEVEL</button>
+        <button id="clearLevel" type="button">CLEAR</button>
+      </div>
+    </div>
   </div>
 
   <script src="game.js"></script>
