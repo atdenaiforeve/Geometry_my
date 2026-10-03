@@ -46,12 +46,28 @@
         </div>
         <button id="closeEditor" type="button">EXIT</button>
       </div>
+      <div class="editorModeTabs">
+        <button class="modeTab active" data-mode="build" type="button">BUILD</button>
+        <button class="modeTab" data-mode="edit" type="button">EDIT</button>
+        <button class="modeTab" data-mode="delete" type="button">DELETE</button>
+      </div>
       <div class="editorTools">
         <button class="tool active" data-tool="block" type="button">BLOCK</button>
         <button class="tool" data-tool="spike" type="button">SPIKE</button>
+        <button class="tool" data-tool="platform" type="button">PLATFORM</button>
+        <button class="tool" data-tool="energy" type="button">ENERGY</button>
+        <button class="tool" data-tool="reality" type="button">REALITY</button>
         <button class="tool" data-tool="erase" type="button">ERASE</button>
-        <button id="editorLeft" type="button">◀ 100</button>
-        <button id="editorRight" type="button">100 ▶</button>
+      </div>
+      <div class="editorQuick">
+        <button id="editorUndo" type="button">↶ UNDO</button>
+        <button id="editorRedo" type="button">↷ REDO</button>
+        <button id="editorGrid" type="button">GRID: ON</button>
+        <button id="editorSnap" type="button">SNAP: ON</button>
+        <button id="editorZoomOut" type="button">−</button>
+        <button id="editorZoomIn" type="button">+</button>
+        <button id="editorLeft" type="button">◀</button>
+        <button id="editorRight" type="button">▶</button>
       </div>
       <div class="editorCanvasWrap">
         <canvas id="editorCanvas" aria-label="Level maker canvas"></canvas>
