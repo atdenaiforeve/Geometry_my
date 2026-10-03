@@ -314,6 +314,9 @@ let editorSelected=null;
 let editorDragging=false;
 let editorLastPointer=null;
 let editorLevelLoaded=false;
+let editorClipboard=null;
+const CREATOR_SAVE_KEY="nexusCreatorLevel";
+const OFFICIAL_LEVELS_KEY="nexusOfficialLevels_v1";
 
 const passwordMenu=document.getElementById("passwordMenu");
 const editorMenu=document.getElementById("editorMenu");
@@ -338,7 +341,7 @@ function cloneObjects(){
 }
 function loadCreatorLevel(){
   try{
-    const saved=localStorage.getItem("nexusCreatorLevel");
+    const saved=localStorage.getItem(CREATOR_SAVE_KEY);
     if(saved){
       const data=JSON.parse(saved);
       if(Array.isArray(data.blocks)&&Array.isArray(data.spikes)){
@@ -583,7 +586,7 @@ function drawEditor(){
   ectx.fillText("X: "+Math.round(editorCamera)+"  "+editorModeTab.toUpperCase()+"  "+editorTool.toUpperCase(),12,24);
 }
 function saveCreatorLevel(){
-  localStorage.setItem("nexusCreatorLevel",JSON.stringify(editorObjects));
+  localStorage.setItem(CREATOR_SAVE_KEY,JSON.stringify(editorObjects));
   editorLevelLoaded=true;
   document.getElementById("editorStatus").textContent="LEVEL SAVED · "+editorObjects.blocks.length+" blocks · "+editorObjects.spikes.length+" spikes";
 }
@@ -603,6 +606,84 @@ function testCreatorLevel(){
   editorMode=false;
   startGame();
 }
+function selectedObjectClone(){
+  if(!editorSelected)return null;
+  if(editorSelected.type==="block"){
+    const b=editorObjects.blocks[editorSelected.index];
+    return b?{type:"block",data:{...b}}:null;
+  }
+  const s=editorObjects.spikes[editorSelected.index];
+  return s?{type:"spike",data:{...s}}:null;
+}
+function copyEditorObject(){
+  const copy=selectedObjectClone();
+  if(!copy){document.getElementById("editorStatus").textContent="COPY · select an object first";return;}
+  editorClipboard=copy;
+  document.getElementById("editorStatus").textContent="COPIED · "+copy.type.toUpperCase();
+}
+function pasteEditorObject(){
+  if(!editorClipboard){document.getElementById("editorStatus").textContent="PASTE · nothing copied yet";return;}
+  pushEditorHistory();
+  const d={...editorClipboard.data,x:editorClipboard.data.x+40};
+  if(editorClipboard.type==="spike"){
+    editorObjects.spikes.push(d);
+    editorSelected={type:"spike",index:editorObjects.spikes.length-1};
+  }else{
+    editorObjects.blocks.push(d);
+    editorSelected={type:"block",index:editorObjects.blocks.length-1};
+  }
+  editorModeTab="edit";
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="edit"));
+  document.getElementById("editorStatus").textContent="PASTED · drag the copy into place";
+  drawEditor();
+}
+function moveTool(){
+  editorModeTab="edit";
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="edit"));
+  document.getElementById("editorStatus").textContent="MOVE · tap a block, then drag it";
+}
+function loadOfficialLevels(){
+  try{
+    const data=JSON.parse(localStorage.getItem(OFFICIAL_LEVELS_KEY)||"[]");
+    return Array.isArray(data)?data.filter(x=>x&&Array.isArray(x.blocks)&&Array.isArray(x.spikes)):[];
+  }catch(e){return []}
+}
+function saveOfficialLevel(){
+  const name=(document.getElementById("levelName")?.value||"NEXUS CREATION").trim().slice(0,28)||"NEXUS CREATION";
+  const blocksCopy=editorObjects.blocks.map(o=>({...o}));
+  const spikesCopy=editorObjects.spikes.map(o=>({...o}));
+  if(!blocksCopy.length&&!spikesCopy.length){
+    document.getElementById("editorStatus").textContent="PUBLISH FAILED · ADD SOME OBJECTS FIRST";
+    return;
+  }
+  const levels=loadOfficialLevels();
+  const id=Date.now();
+  levels.push({id,name,blocks:blocksCopy,spikes:spikesCopy,publishedAt:new Date().toISOString()});
+  localStorage.setItem(OFFICIAL_LEVELS_KEY,JSON.stringify(levels));
+  localStorage.setItem(CREATOR_SAVE_KEY,JSON.stringify(editorObjects));
+  refreshOfficialLevelMenu();
+  document.getElementById("editorStatus").textContent="✓ OFFICIAL LEVEL PUBLISHED · "+name;
+}
+function playOfficialLevel(id){
+  const level=loadOfficialLevels().find(x=>String(x.id)===String(id));
+  if(!level)return;
+  blocks=level.blocks.map(o=>({...o}));
+  spikes=level.spikes.map(o=>({...o}));
+  startGame();
+}
+function refreshOfficialLevelMenu(){
+  const container=document.getElementById("officialLevels");
+  if(!container)return;
+  container.innerHTML="";
+  for(const level of loadOfficialLevels()){
+    const button=document.createElement("button");
+    button.className="level officialLevel";button.type="button";button.dataset.officialId=level.id;
+    button.innerHTML="OFFICIAL · "+escapeHtml(level.name)+' <span>CREATOR LEVEL</span>';
+    button.addEventListener("click",()=>playOfficialLevel(level.id));
+    container.appendChild(button);
+  }
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
 function setEditorTool(tool){
   editorTool=tool;
   document.querySelectorAll(".editorTools .tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
@@ -610,6 +691,11 @@ function setEditorTool(tool){
 }
 
 document.getElementById("creator").addEventListener("click",enterCreator);
+document.getElementById("editorMove").addEventListener("click",moveTool);
+document.getElementById("editorCopy").addEventListener("click",copyEditorObject);
+document.getElementById("editorPaste").addEventListener("click",pasteEditorObject);
+document.getElementById("publishLevel").addEventListener("click",saveOfficialLevel);
+refreshOfficialLevelMenu();
 document.getElementById("unlockCreator").addEventListener("click",unlockCreator);
 document.getElementById("cancelCreator").addEventListener("click",()=>{
   hideOverlay(passwordMenu);showOverlay(document.getElementById("menu"));
@@ -654,7 +740,7 @@ addEventListener("resize",()=>{if(editorMode){resizeEditor();drawEditor()}});
 
 // Keep the normal level select working with the current saved creator level.
 document.querySelector('.level[data-level="1"]').addEventListener("click",()=>{
-  const saved=localStorage.getItem("nexusCreatorLevel");
+  const saved=localStorage.getItem(CREATOR_SAVE_KEY);
   if(saved){
     try{
       const data=JSON.parse(saved);
