@@ -10,6 +10,7 @@ let characterColor="#4dd7ff";
 let paintGrid=Array(PAINT_SIZE*PAINT_SIZE).fill(null);
 let paintHistory=[];
 let paintEraser=false;
+let useProPaint=false;
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
 const baseSpikes=[
@@ -56,7 +57,7 @@ function loadCharacterPaint(){
 function saveCharacterPaint(){
   try{localStorage.setItem(CHARACTER_PAINT_KEY,JSON.stringify(paintGrid))}catch(e){}
 }
-function paintHasAny(){return paintGrid.some(Boolean)}
+function paintHasAny(){return useProPaint&&paintGrid.some(Boolean)}
 function drawPaintedCharacter(target,size){
   const p=target;
   const cell=size/PAINT_SIZE;
@@ -371,6 +372,7 @@ function paintUndo(){
 }
 function switchCustomizeMode(mode){
   const pro=mode==="pro";
+  useProPaint=pro;
   document.getElementById("autoColorPanel").classList.toggle("hidden",pro);
   document.getElementById("proCreatePanel").classList.toggle("hidden",!pro);
   document.getElementById("autoColorMode").classList.toggle("active",!pro);
