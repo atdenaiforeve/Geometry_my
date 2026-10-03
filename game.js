@@ -1,6 +1,7 @@
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 let w=0,h=0,dpr=1;
+const DESIGN_W=960,DESIGN_H=540;
 const player={x:120,y:0,size:34,vy:0,onGround:false};
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
@@ -9,8 +10,15 @@ let camera=0,dead=false;
 
 function resize(){
   dpr=Math.min(devicePixelRatio||1,2);
-  w=innerWidth;h=innerHeight;
+  w=DESIGN_W;h=DESIGN_H;
   canvas.width=w*dpr;canvas.height=h*dpr;
+  const scale=Math.min(innerWidth/DESIGN_W,innerHeight/DESIGN_H);
+  canvas.style.width=`${DESIGN_W*scale}px`;
+  canvas.style.height=`${DESIGN_H*scale}px`;
+  canvas.style.position="absolute";
+  canvas.style.left="50%";
+  canvas.style.top="50%";
+  canvas.style.transform="translate(-50%,-50%)";
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 addEventListener("resize",resize);resize();
