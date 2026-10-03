@@ -2,7 +2,7 @@ const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 let w=0,h=0,dpr=1;
 const DESIGN_W=960,DESIGN_H=540;
-const player={x:120,y:0,size:34,vy:0,onGround:false};
+const player={x:120,y:0,size:34,vy:0,onGround:false,rotation:0};
 const gravity=1700,jump=-650,speed=260;
 const groundHeight=90;
 const spikes=[
@@ -39,7 +39,7 @@ function resize(){
 addEventListener("resize",resize);resize();
 
 function reset(){
-  player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;
+  player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;player.rotation=0;
   camera=0;dead=false;
 }
 function doJump(){
@@ -127,10 +127,13 @@ function update(dt){
   player.x+=speed*dt;
   player.vy+=gravity*dt;
   player.y+=player.vy*dt;
+  // Rotate in 90-degree steps while airborne, then settle when grounded.
+  if(!player.onGround) player.rotation += (speed/player.size)*dt*Math.PI/2;
 
   const floor=h-groundHeight-player.size;
   if(player.y>=floor){
     player.y=floor;player.vy=0;player.onGround=true;
+    player.rotation=Math.round(player.rotation/(Math.PI/2))*(Math.PI/2);
     if(holding)doJump();
   }else player.onGround=false;
 
@@ -175,10 +178,14 @@ function draw(){
   }
 
   const px=player.x-camera;
+  ctx.save();
+  ctx.translate(px+player.size/2,player.y+player.size/2);
+  ctx.rotate(player.rotation);
   ctx.fillStyle="#4dd7ff";
-  ctx.fillRect(px,player.y,player.size,player.size);
+  ctx.fillRect(-player.size/2,-player.size/2,player.size,player.size);
   ctx.strokeStyle="#b8f2ff";ctx.lineWidth=3;
-  ctx.strokeRect(px+1.5,player.y+1.5,player.size-3,player.size-3);
+  ctx.strokeRect(-player.size/2+1.5,-player.size/2+1.5,player.size-3,player.size-3);
+  ctx.restore();
 
   if(dead){
     ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,0,w,h);
