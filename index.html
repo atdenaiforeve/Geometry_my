@@ -30,12 +30,28 @@
 
   <script src="game.js"></script>
   <script>
-    window.addEventListener("load",()=>{
-      setTimeout(()=>{
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("menu").classList.remove("hidden");
-      },700);
-    });
+    // Boot the game menu reliably even when the page is restored from cache.
+    (() => {
+      const loading = document.getElementById("loading");
+      const menu = document.getElementById("menu");
+
+      function showMainMenu() {
+        loading.classList.add("hidden");
+        menu.classList.remove("hidden");
+        loading.style.display = "none";
+        menu.style.display = "flex";
+      }
+
+      // Start the transition after the document is ready, rather than waiting
+      // for every page resource to finish loading.
+      const boot = () => setTimeout(showMainMenu, 700);
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot, { once: true });
+      } else {
+        boot();
+      }
+    })();
   </script>
 </body>
 </html>
