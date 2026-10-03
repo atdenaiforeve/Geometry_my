@@ -310,8 +310,16 @@ function update(dt){
         player.onGround=true;
         player.rotation=Math.round(player.rotation/(Math.PI/2))*(Math.PI/2);
       }else{
-        deathReason="block";
-        return true;
+        // Give the player a small amount of overlap before the block kills them.
+        // This prevents a tiny edge touch from feeling like an instant death.
+        const overlapX=Math.min(playerRight,r.x+r.w)-Math.max(player.x,r.x);
+        const overlapY=Math.min(playerBottom,r.y+r.h)-Math.max(player.y,r.y);
+        const BLOCK_DEATH_PENETRATION=10;
+
+        if(overlapX>=BLOCK_DEATH_PENETRATION && overlapY>=BLOCK_DEATH_PENETRATION){
+          deathReason="block";
+          return true;
+        }
       }
     }
     return false;
