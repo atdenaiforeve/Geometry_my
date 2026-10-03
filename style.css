@@ -115,3 +115,15 @@ canvas{display:block;image-rendering:auto}
   .editorQuick button{min-width:50px}
   .editorActions button{min-height:44px}
 }
+
+
+/* ===== CREATOR WORKFLOW ===== */
+.levelName{min-width:220px;min-height:42px;padding:8px 12px;border:1px solid #3b3158;border-radius:7px;background:#0b0814;color:#eef2ff;font:700 13px system-ui;letter-spacing:1px;text-transform:uppercase;outline:none}
+.levelName:focus{border-color:#00e5ff;box-shadow:0 0 14px rgba(0,229,255,.25)}
+.editorModeTabs #editorMove,.editorModeTabs #editorCopy,.editorModeTabs #editorPaste{background:#0d0a17;border-color:#5a477c}
+.editorModeTabs #editorMove:hover,.editorModeTabs #editorCopy:hover,.editorModeTabs #editorPaste:hover{border-color:#00e5ff;box-shadow:0 0 12px rgba(0,229,255,.2)}
+.editorActions #publishLevel{background:linear-gradient(120deg,#ff2e93,#8a4dff,#00e5ff);color:#05030a;border-color:#fff}
+.officialLevels{width:min(600px,94vw);display:flex;flex-direction:column;gap:8px;max-height:26vh;overflow:auto}
+.officialLevel{min-width:0!important;width:100%;font-size:14px!important}
+.officialLevel span{float:right;opacity:.7;font-size:10px}
+@media(max-width:650px){.levelName{width:100%;min-width:0}.editorTop{flex-wrap:wrap}.editorTop .levelName{order:3}.officialLevels{max-height:22vh}}
