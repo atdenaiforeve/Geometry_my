@@ -262,6 +262,8 @@ function loop(now){
 }
 function update(dt){
   if(dead)return;
+  const previousY=player.y;
+  const previousBottom=player.y+player.size;
   player.x+=speed*dt;
   player.vy+=gravity*dt;
   player.y+=player.vy*dt;
@@ -293,16 +295,31 @@ function update(dt){
     return false;
   }
 
-  function damageFromBlocks(){
+  function solidBlocks(){
     for(const b of blocks){
       const r=blockRect(b);
       if(r.x>playerRight||r.x+r.w<player.x||r.y>playerBottom||r.y+r.h<player.y)continue;
-      if(accurateBlockHit(b)){deathReason="block";return true}
+      if(!accurateBlockHit(b))continue;
+
+      const horizontalOverlap=playerRight>r.x && player.x<r.x+r.w;
+      if(horizontalOverlap && previousBottom<=r.y+4 && player.vy>=0){
+        player.y=r.y-player.size;
+        player.vy=0;
+        player.onGround=true;
+        player.rotation=Math.round(player.rotation/(Math.PI/2))*(Math.PI/2);
+      }else if(previousY>=r.y+r.h-4 && player.vy<0){
+        player.y=r.y+r.h;
+        player.vy=0;
+      }else{
+        if(player.x<r.x)player.x=r.x-player.size;
+        else if(player.x>r.x)player.x=r.x+r.w;
+        player.vy=0;
+      }
     }
-    return false;
   }
 
-  if(damageFromSpikes()||damageFromBlocks())dead=true;
+  if(damageFromSpikes())dead=true;
+  if(!dead)solidBlocks();
 }
 function draw(){
   ctx.clearRect(0,0,w,h);
