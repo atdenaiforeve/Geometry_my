@@ -38,7 +38,12 @@ function resize(){
 }
 addEventListener("resize",resize);resize();
 
-function startGame(){playing=true;document.getElementById("menu").classList.add("hidden");document.getElementById("levelMenu").classList.add("hidden");reset()}
+function startGame(){
+  playing=true;
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("levelMenu").classList.add("hidden");
+  reset();
+}
 function reset(){
   player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;player.rotation=0;
   camera=0;dead=false;deathReason="";
@@ -197,8 +202,8 @@ function draw(){
     ctx.font="18px system-ui";ctx.fillText("Tap or press Space to restart",w/2,h/2+28);
   }
 }
-document.getElementById("play").addEventListener("click",startGame);
-document.getElementById("levels").addEventListener("click",()=>{
+document.getElementById("play").addEventListener("click",()=>{
+  playing=false;
   document.getElementById("menu").classList.add("hidden");
   document.getElementById("levelMenu").classList.remove("hidden");
 });
