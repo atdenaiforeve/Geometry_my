@@ -21,7 +21,7 @@ const blocks=[
   {x:2320,y:0,w:80,h:45},
   {x:2850,y:0,w:120,h:40}
 ];
-let camera=0,dead=false,holding=false;
+let camera=0,dead=false,holding=false,playing=false;
 
 function resize(){
   dpr=Math.min(devicePixelRatio||1,2);
@@ -38,6 +38,7 @@ function resize(){
 }
 addEventListener("resize",resize);resize();
 
+function startGame(){playing=true;document.getElementById("menu").classList.add("hidden");document.getElementById("levelMenu").classList.add("hidden");reset()}
 function reset(){
   player.x=120;player.y=h-groundHeight-player.size;player.vy=0;player.onGround=true;player.rotation=0;
   camera=0;dead=false;
@@ -120,7 +121,9 @@ function accurateBlockHit(b){
 let last=performance.now();
 function loop(now){
   const dt=Math.min((now-last)/1000,0.033);last=now;
-  update(dt);draw();requestAnimationFrame(loop);
+  if(playing)update(dt);
+  draw();
+  requestAnimationFrame(loop);
 }
 function update(dt){
   if(dead)return;
@@ -194,4 +197,18 @@ function draw(){
     ctx.font="18px system-ui";ctx.fillText("Tap or press Space to restart",w/2,h/2+28);
   }
 }
+document.getElementById("play").addEventListener("click",startGame);
+document.getElementById("levels").addEventListener("click",()=>{
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("levelMenu").classList.remove("hidden");
+});
+document.getElementById("back").addEventListener("click",()=>{
+  document.getElementById("levelMenu").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+});
+document.querySelectorAll(".level").forEach(button=>{
+  button.addEventListener("click",()=>{
+    if(button.dataset.level==="1")startGame();
+  });
+});
 reset();requestAnimationFrame(loop);
