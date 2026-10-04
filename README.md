@@ -4,9 +4,11 @@ A horizontal, original Geometry Dash-inspired browser game built from scratch.
 
 ## 🎮 About
 
-**INTO THE NEXUS** is a fast-paced geometric platform game where the player jumps, avoids obstacles, and travels through a futuristic Nexus.
+**INTO THE NEXUS** is a fast-paced geometric platform game where the player jumps, avoids obstacles, and travels through the strange world of the Nexus.
 
-The project is designed for both **mobile and computer/laptop** play, with touch and mouse/keyboard controls.
+**The Nexus is where realities merge.**
+
+The game is designed for both **mobile and computer/laptop** play, with touch and mouse/keyboard controls.
 
 ## ✨ Current Features
 
@@ -18,8 +20,12 @@ The project is designed for both **mobile and computer/laptop** play, with touch
 - Blocks and spikes
 - Level progression and level select
 - Saved best progress
-- Loading screen before the main menu
-- Futuristic **THE NEXUS** visual style
+- Animated **Into the Nexus** main menu
+- **Where realities merge.** tagline and Nexus visual theme
+- Reality instability, rifts and floating world fragments
+- Mysterious Nexus cube
+- Skippable rift transition from the main menu into gameplay
+- Four main menu routes: **PLAY**, **LEVEL SELECT**, **CUSTOMIZE** and **LEVEL MAKER**
 - Creator Level Maker
 - Large scrollable editor workspace
 - Mobile editor scrolling and zooming
@@ -32,6 +38,7 @@ The project is designed for both **mobile and computer/laptop** play, with touch
 - Win Wall for controlling exactly where a level ends
 - Creator levels can be published as official levels locally
 - Performance-conscious rendering for larger levels
+- Background prefetching to speed up transitions into the game
 
 ## 🛠️ Level Maker
 
@@ -56,6 +63,7 @@ The goal is to make level creation comfortable on both mobile and computer.
 
 Creators can build their own levels and test them before publishing.
 
+The main menu can route directly to gameplay or the level-select screen, while customization and the Level Maker have their own routes.
 
 ## 🚧 Development Status
 
@@ -70,4 +78,3 @@ The game is actively being developed. Features, level-editor systems, visuals, g
 ## 👤 Creator
 
 Built by Ayden.
-
