@@ -242,7 +242,13 @@
           const levelMenu = document.getElementById("levelMenu");
           if (levelMenu && typeof showOverlay === "function") showOverlay(levelMenu);
         } else if (screen === "shop") {
-          if (shop) shop.click();
+          menu.classList.add("hidden");
+          menu.style.display = "none";
+          const shopMenu = document.getElementById("shopMenu");
+          if (shopMenu && typeof showOverlay === "function") {
+            showOverlay(shopMenu);
+            if (typeof drawShopRobot === "function") drawShopRobot();
+          }
         } else if (screen === "customize") {
           const customize = document.getElementById("customize");
           if (customize) customize.click();
