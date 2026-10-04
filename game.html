@@ -189,20 +189,33 @@
     nexusMessages.scrollTop=nexusMessages.scrollHeight;
   }
 
-  function sendNexusMessage(){
+  async function sendNexusMessage(){
     const message=(nexusInput?.value || "").trim();
     if(!message)return;
     addNexusMessage("YOU",message,true);
     nexusInput.value="";
-    // Local shopkeeper response for now. This can be replaced by the real AI
-    // backend later without changing the chat UI.
-    const lower=message.toLowerCase();
-    let reply="Interesting. I'm still learning this shop.";
-    if(lower.includes("hello") || lower.includes("hi")) reply="Hello. Welcome to the Nexus Shop.";
-    else if(lower.includes("shop") || lower.includes("item")) reply="More Nexus items are being prepared.";
-    else if(lower.includes("who") || lower.includes("name")) reply="I am Nexus AI. I watch the merge.";
-    else if(lower.includes("bye")) reply="Connection closed. I'll be here.";
-    setTimeout(()=>addNexusMessage("NEXUS",reply),180);
+
+    const thinking=document.createElement("div");
+    thinking.className="nexusBubble";
+    thinking.textContent="NEXUS: Thinking...";
+    nexusMessages.appendChild(thinking);
+    nexusMessages.scrollTop=nexusMessages.scrollHeight;
+
+    try {
+      const response=await fetch("https://nexus-ai.pagey101212.workers.dev/",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({message})
+      });
+      const data=await response.json();
+      thinking.remove();
+      if(!response.ok || !data.response) throw new Error(data.error || "Nexus did not respond.");
+      addNexusMessage("NEXUS",data.response);
+    } catch(error) {
+      thinking.remove();
+      addNexusMessage("NEXUS","Connection to my AI core failed. Try again in a moment.");
+      console.error("Nexus AI error:",error);
+    }
   }
 
   if(canvas){
