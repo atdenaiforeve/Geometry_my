@@ -15,7 +15,6 @@
   <div id="menu" class="menu hidden">
     <h1>INTO THE NEXUS</h1>
     <button id="play" type="button">PLAY</button>
-    <button id="levelSelect" type="button">LEVEL SELECT</button>
     <button id="creator" type="button">LEVEL MAKER</button>
     <button id="customize" type="button">CUSTOMIZE</button>
     <button id="shop" type="button">SHOP</button>
@@ -239,12 +238,11 @@
 
         // Route the main-menu destination directly. No delayed simulated
         // clicks, so every URL from the Nexus landing page opens its screen.
-        if (start) {
-          const level = document.querySelector('.level[data-level="1"]');
-          if (level) level.click();
-        } else if (screen === "levels") {
+        if (start || screen === "levels") {
           const levelMenu = document.getElementById("levelMenu");
           if (levelMenu && typeof showOverlay === "function") showOverlay(levelMenu);
+        } else if (screen === "shop") {
+          if (shop) shop.click();
         } else if (screen === "customize") {
           const customize = document.getElementById("customize");
           if (customize) customize.click();
