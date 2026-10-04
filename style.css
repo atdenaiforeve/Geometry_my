@@ -31,6 +31,7 @@ canvas{display:block}.menu{position:fixed;inset:0;z-index:10;display:flex;flex-d
 #shopMenu{
   background:
     radial-gradient(circle at 50% 45%,rgba(138,77,255,.18),transparent 42%),
+    url("./assets/Gemini_Generated_Image_qe190zqe190zqe19.jpeg") center/cover no-repeat,
     rgba(5,3,10,.96);
 }
 .shopRobot{
