@@ -328,6 +328,79 @@ function update(dt){
   if(damageFromSpikes())dead=true;
   if(!dead && solidBlocks())dead=true;
 }
+function drawNexusAI(){
+  const x=770, y=385;
+  ctx.save();
+
+  // Static dialogue panel — this character is intentionally a talk-only NPC.
+  const bx=x-118, by=y-154, bw=300, bh=72;
+  ctx.fillStyle="rgba(7,5,18,.94)";
+  ctx.strokeStyle="#00e5ff";
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,12); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="#eef2ff"; ctx.font="700 13px system-ui";
+  ctx.fillText("NEXUS AI",bx+14,by+20);
+  ctx.fillStyle="#bfefff"; ctx.font="600 14px system-ui";
+  ctx.fillText("Reality merge detected.",bx+14,by+42);
+  ctx.fillStyle="#8f8aa8"; ctx.font="11px system-ui";
+  ctx.fillText("Tap me to talk",bx+14,by+60);
+
+  ctx.translate(x,y);
+
+  const aura=ctx.createRadialGradient(0,0,15,0,0,75);
+  aura.addColorStop(0,"rgba(0,229,255,.18)");
+  aura.addColorStop(1,"rgba(0,229,255,0)");
+  ctx.fillStyle=aura; ctx.fillRect(-75,-90,150,170);
+
+  // Legs
+  ctx.fillStyle="#10131d"; ctx.strokeStyle="#7cf7ff"; ctx.lineWidth=2;
+  ctx.fillRect(-31,30,22,55); ctx.strokeRect(-31,30,22,55);
+  ctx.fillRect(9,30,22,55); ctx.strokeRect(9,30,22,55);
+  ctx.fillStyle="#20283a"; ctx.fillRect(-36,82,32,10); ctx.fillRect(4,82,32,10);
+
+  // Torso
+  const body=ctx.createLinearGradient(-42,-20,42,55);
+  body.addColorStop(0,"#273047"); body.addColorStop(1,"#0c101a");
+  ctx.fillStyle=body;
+  ctx.beginPath(); ctx.roundRect(-42,-24,84,66,14); ctx.fill(); ctx.stroke();
+
+  // Reality seam
+  ctx.strokeStyle="#ff2e93"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(5,-21); ctx.lineTo(-3,0); ctx.lineTo(8,18); ctx.lineTo(0,39); ctx.stroke();
+
+  // Core
+  ctx.shadowColor="#00e5ff"; ctx.shadowBlur=12; ctx.fillStyle="#9fffff";
+  ctx.beginPath(); ctx.arc(0,8,13,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0; ctx.strokeStyle="#00e5ff";
+  ctx.beginPath(); ctx.arc(0,8,19,0,Math.PI*2); ctx.stroke();
+
+  // Arms
+  ctx.strokeStyle="#7cf7ff"; ctx.lineWidth=9; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-39,-12); ctx.lineTo(-58,28); ctx.moveTo(39,-12); ctx.lineTo(58,28); ctx.stroke();
+  ctx.fillStyle="#172033";
+  ctx.beginPath(); ctx.arc(-58,31,7,0,Math.PI*2); ctx.arc(58,31,7,0,Math.PI*2); ctx.fill();
+  ctx.lineCap="butt";
+
+  // Head + visor
+  const head=ctx.createLinearGradient(-39,-80,39,-20);
+  head.addColorStop(0,"#34405a"); head.addColorStop(1,"#111722");
+  ctx.fillStyle=head; ctx.strokeStyle="#b6ffff"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(-39,-86,78,58,15); ctx.fill(); ctx.stroke();
+  ctx.fillStyle="#050b13"; ctx.strokeStyle="#00e5ff";
+  ctx.beginPath(); ctx.roundRect(-30,-72,60,25,9); ctx.fill(); ctx.stroke();
+  ctx.shadowColor="#00e5ff"; ctx.shadowBlur=8; ctx.fillStyle="#eaffff";
+  ctx.fillRect(-19,-63,10,5); ctx.fillRect(9,-63,10,5); ctx.shadowBlur=0;
+
+  // Reality-fracture details
+  ctx.strokeStyle="#ffb020"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-30,-31); ctx.lineTo(-20,-25); ctx.lineTo(-25,-19);
+  ctx.moveTo(27,-83); ctx.lineTo(34,-77); ctx.stroke();
+
+  ctx.fillStyle="#8f8aa8"; ctx.font="700 9px system-ui"; ctx.textAlign="center";
+  ctx.fillText("NEXUS",0,104);
+  ctx.restore();
+}
+
 function draw(){
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle="#171a22";ctx.fillRect(0,0,w,h);
@@ -358,6 +431,8 @@ function draw(){
     ctx.closePath();
     ctx.fillStyle="#e94b5f";ctx.fill();
   }
+
+  drawNexusAI();
 
   const px=player.x-camera;
   ctx.save();
