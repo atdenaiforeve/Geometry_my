@@ -1561,14 +1561,18 @@ const buttons = Array.from(document.querySelectorAll('[data-action]'));
   document.addEventListener('visibilitychange', () => (document.hidden ? pause() : resume()));
 
   resize();
-  // Paint the actual menu first. Heavy cloud textures are prepared after the first visible frame.
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      prepareCloudSprites();
-      buildClouds();
-    }, 0);
-  });
+  // FAST BOOT: show the menu immediately, then build heavy scene details only after paint.
   resume();
+  const bootScene = () => {
+    if (document.hidden) return;
+    prepareCloudSprites();
+    buildClouds();
+  };
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(bootScene, { timeout: 1200 });
+  } else {
+    setTimeout(bootScene, 120);
+  }
 
   // Rarely, one letter of the tagline slips into something else.
   const tagEl = document.querySelector('.tagline');
