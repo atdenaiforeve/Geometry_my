@@ -197,62 +197,9 @@
       transform: scale(24);
       filter: brightness(1.5) saturate(1.5);
     }
-    body.rift-transition .menu {
-      opacity: 0;
-      transition: opacity 0.6s ease;
-    }
-    #rift-transition {
-      position: fixed;
-      inset: 0;
-      z-index: 90;
-      pointer-events: none;
-      opacity: 0;
-      background:
-        radial-gradient(circle at 63% 19%, rgba(125,255,240,0.38) 0 2.5%, rgba(125,255,240,0.14) 7%, transparent 21%),
-        radial-gradient(circle at 63% 19%, transparent 0 7%, rgba(255,120,210,0.18) 8%, transparent 20%);
-      transition: opacity 0.2s ease;
-    }
-    body.rift-transition #rift-transition {
-      opacity: 1;
-    }
-    body.rift-transition-customize #nexus-scene {
-      transform-origin: 13% 46%;
-      transform: scale(13);
-      filter: brightness(1.25) saturate(1.25);
-    }
-    body.rift-transition-customize .menu {
-      opacity: 0;
-      transition: opacity 0.32s ease;
-    }
-    body.rift-transition-customize #rift-transition {
-      opacity: 1;
-      background:
-        radial-gradient(circle at 13% 46%, rgba(255,120,210,0.2) 0 2%, rgba(125,255,240,0.08) 7%, transparent 18%),
-        radial-gradient(circle at 13% 46%, transparent 0 9%, rgba(191,168,255,0.15) 10%, transparent 18%);
-    }
-    /* Level Maker leaves the Nexus by pulling away until everything goes black. */
-    body.maker-transition #nexus-scene {
-      transform-origin: 50% 43%;
-      transform: scale(0.12);
-      filter: brightness(0.05) saturate(0.45);
-    }
-    body.maker-transition .menu {
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    #maker-blackout {
-      position: fixed;
-      inset: 0;
-      z-index: 95;
-      pointer-events: none;
-      background: #000;
-      opacity: 0;
-      transition: opacity 0.82s ease;
-    }
-    body.maker-transition #maker-blackout {
-      opacity: 1;
-    }
-
+    
+                        /* Level Maker leaves the Nexus by pulling away until everything goes black. */
+                
     @media (prefers-reduced-motion: reduce) {
       #nexus-scene { transition: none; }
       body.rift-transition #nexus-scene { transform: scale(1); }
@@ -304,111 +251,20 @@
   'use strict';
 
   const ACTIONS = {
-    play() {
-      const target = new URL('game.html?start=1', window.location.href).href;
-    // Keep the destination ready while the Nexus zooms; navigate only after the transition finishes.
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let finished = false;
-
-      const finish = (skip = false) => {
-        if (finished) return;
-        finished = true;
-        window.removeEventListener('keydown', skipHandler);
-        window.removeEventListener('pointerdown', skipHandler);
-        window.removeEventListener('touchstart', skipHandler);
-        if (skip || reduced) {
-          window.location.assign(target);
-          return;
-        }
-        document.body.classList.add('rift-transition');
-        setTimeout(() => window.location.assign(target), 1250);
-      };
-
-      const skipHandler = (e) => {
-        if (e.type === 'keydown' && ![' ', 'Enter', 'Escape'].includes(e.key)) return;
-        e.preventDefault();
-        finish(true);
-      };
-
-      // The PLAY button sends the camera through the rift at the upper-right
-      // of the Nexus scene. Tap/click, Space, Enter, or Escape skips it.
-      window.addEventListener('keydown', skipHandler, { once: false });
-      window.addEventListener('pointerdown', skipHandler, { once: false });
-      window.addEventListener('touchstart', skipHandler, { once: false, passive: false });
-      document.body.classList.add('rift-transition');
-      setTimeout(() => finish(false), 1250);
-    },
-    'level-select'() {
-      window.location.assign(new URL('game.html?screen=levels', window.location.href).href);
-    },
-    customize() {
-      const target = new URL('game.html?screen=customize', window.location.href).href;
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let finished = false;
-
-      const finish = (skip = false) => {
-        if (finished) return;
-        finished = true;
-        window.removeEventListener('keydown', skipHandler);
-        window.removeEventListener('pointerdown', skipHandler);
-        window.removeEventListener('touchstart', skipHandler);
-        if (skip || reduced) {
-          window.location.assign(target);
-          return;
-        }
-        document.body.classList.add('rift-transition-customize');
-        setTimeout(() => window.location.assign(target), 1050);
-      };
-
-      const skipHandler = (e) => {
-        if (e.type === 'keydown' && ![' ', 'Enter', 'Escape'].includes(e.key)) return;
-        e.preventDefault();
-        finish(true);
-      };
-
-      // Customize uses a different rift on the left side of the Nexus scene.
-      window.addEventListener('keydown', skipHandler);
-      window.addEventListener('pointerdown', skipHandler);
-      window.addEventListener('touchstart', skipHandler, { passive: false });
-      document.body.classList.add('rift-transition-customize');
-      setTimeout(() => finish(false), 1050);
-    },
-    'level-maker'() {
-      const target = new URL('game.html?screen=maker', window.location.href).href;
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let finished = false;
-
-      const finish = (skip = false) => {
-        if (finished) return;
-        finished = true;
-        window.removeEventListener('keydown', skipHandler);
-        window.removeEventListener('pointerdown', skipHandler);
-        window.removeEventListener('touchstart', skipHandler);
-        if (skip || reduced) {
-          window.location.assign(target);
-          return;
-        }
-        document.body.classList.add('maker-transition');
-        setTimeout(() => window.location.assign(target), 1050);
-      };
-
-      const skipHandler = (e) => {
-        if (e.type === 'keydown' && ![' ', 'Enter', 'Escape'].includes(e.key)) return;
-        e.preventDefault();
-        finish(true);
-      };
-
-      // Level Maker pulls the camera away from the Nexus, then the screen goes black.
-      window.addEventListener('keydown', skipHandler);
-      window.addEventListener('pointerdown', skipHandler);
-      window.addEventListener('touchstart', skipHandler, { passive: false });
-      document.body.classList.add('maker-transition');
-      setTimeout(() => finish(false), 1050);
-    },
-  };
-
-  // ---- Wiring (no need to touch) ----
-  const buttons = Array.from(document.querySelectorAll('[data-action]'));
+  play() {
+    window.location.assign(new URL('game.html?start=1', window.location.href).href);
+  },
+  'level-select'() {
+    window.location.assign(new URL('game.html?screen=levels', window.location.href).href);
+  },
+  customize() {
+    window.location.assign(new URL('game.html?screen=customize', window.location.href).href);
+  },
+  'level-maker'() {
+    window.location.assign(new URL('game.html?screen=maker', window.location.href).href);
+  },
+};
+const buttons = Array.from(document.querySelectorAll('[data-action]'));
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const run = ACTIONS[btn.dataset.action];
