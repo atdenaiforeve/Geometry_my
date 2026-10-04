@@ -461,6 +461,13 @@ document.querySelectorAll(".level").forEach(button=>{
     e.stopPropagation();
     if(button.dataset.level==="1"){
       startGame();
+    }else if(button.dataset.level==="2"){
+      const label=button.querySelector("span");
+      if(label){
+        const old=label.textContent;
+        label.textContent="LOCKED · BEAT LEVEL 1";
+        setTimeout(()=>{label.textContent=old;},1600);
+      }
     }
   });
 });
