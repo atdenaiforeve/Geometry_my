@@ -177,8 +177,7 @@ function doJump(){
 }
 addEventListener("keydown",e=>{
   if(e.code==="Space"||e.code==="ArrowUp"||e.code==="KeyW"){
-    e.preventDefault();
-    holding=true;
+    e.preventDefault();    holding=true;
     doJump();
   }
 });
@@ -235,6 +234,13 @@ function blockRect(b){
   const floor=h-groundHeight;
   return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
 }
+
+/* ===== Nexus block visual system ===== */
+const BLOCK_STYLES={core:{base:"#182536",edge:"#69e8ff",accent:"#00cfff",detail:"#27465d"},edge:{base:"#202033",edge:"#b6a6ff",accent:"#7d68ff",detail:"#3a335b"},energy:{base:"#102a2b",edge:"#72fff2",accent:"#00e6c3",detail:"#225b59"},reality:{base:"#24152e",edge:"#ff7bc5",accent:"#ff2e93",detail:"#5c244d"}};
+function blockRectFromFloor(b,floor){return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};}
+function blocksTouch(a,b,floor){const ra=blockRectFromFloor(a,floor),rb=blockRectFromFloor(b,floor),eps=2;const vo=Math.min(ra.y+ra.h,rb.y+rb.h)-Math.max(ra.y,rb.y);const ho=Math.min(ra.x+ra.w,rb.x+rb.w)-Math.max(ra.x,rb.x);return {left:Math.abs((rb.x+rb.w)-ra.x)<=eps&&vo>4,right:Math.abs((ra.x+ra.w)-rb.x)<=eps&&vo>4,top:Math.abs((rb.y+rb.h)-ra.y)<=eps&&ho>4,bottom:Math.abs((ra.y+ra.h)-rb.y)<=eps&&ho>4};}
+function getBlockConnections(block,list,floor){const c={left:false,right:false,top:false,bottom:false};for(const other of list){if(other===block)continue;const n=blocksTouch(block,other,floor);c.left||=n.left;c.right||=n.right;c.top||=n.top;c.bottom||=n.bottom;}return c;}
+function drawStyledBlock(target,b,list,floor,camera){const r=blockRectFromFloor(b,floor),x=r.x-camera;if(x+r.w<0||x>DESIGN_W)return;const s=BLOCK_STYLES[b.style]||BLOCK_STYLES.core,c=getBlockConnections(b,list,floor);const g=target.createLinearGradient(x,r.y,x,r.y+r.h);g.addColorStop(0,s.base);g.addColorStop(1,"#080d15");target.fillStyle=g;target.fillRect(x,r.y,r.w,r.h);const inset=Math.min(6,Math.max(3,Math.min(r.w,r.h)/8));target.fillStyle=s.detail;target.fillRect(x+inset,r.y+inset,Math.max(1,r.w-inset*2),Math.max(1,r.h-inset*2));target.strokeStyle=s.edge;target.lineWidth=2;target.beginPath();if(!c.top){target.moveTo(x+1,r.y+1);target.lineTo(x+r.w-1,r.y+1)}if(!c.right){target.moveTo(x+r.w-1,r.y+1);target.lineTo(x+r.w-1,r.y+r.h-1)}if(!c.bottom){target.moveTo(x+r.w-1,r.y+r.h-1);target.lineTo(x+1,r.y+r.h-1)}if(!c.left){target.moveTo(x+1,r.y+r.h-1);target.lineTo(x+1,r.y+1)}target.stroke();target.fillStyle=s.accent;const node=3;if(!c.top)target.fillRect(x+inset,r.y+inset,node,node);if(!c.right)target.fillRect(x+r.w-inset-node,r.y+inset,node,node);if(!c.bottom)target.fillRect(x+r.w-inset-node,r.y+r.h-inset-node,node,node);if(!c.left)target.fillRect(x+inset,r.y+r.h-inset-node,node,node);target.strokeStyle=s.accent;target.globalAlpha=.55;target.lineWidth=1.5;target.beginPath();target.moveTo(x+inset+7,r.y+r.h/2);target.lineTo(x+r.w-inset-7,r.y+r.h/2);target.stroke();target.globalAlpha=1;}
 function accurateBlockHit(b){
   const r=blockRect(b);
   const p=playerPolygon();
@@ -296,130 +302,7 @@ function update(dt){
   }
 
   function solidBlocks(){
-    for(const b of blocks){
-      const r=blockRect(b);
-      if(r.x>playerRight||r.x+r.w<player.x||r.y>playerBottom||r.y+r.h<player.y)continue;
-      if(!accurateBlockHit(b))continue;
-
-      const horizontalOverlap=playerRight>r.x && player.x<r.x+r.w;
-      // Only a clean downward landing from above is safe.
-      // Front/back/side hits and underside hits are fatal.
-      if(horizontalOverlap && previousBottom<=r.y+4 && player.vy>=0){
-        player.y=r.y-player.size;
-        player.vy=0;
-        player.onGround=true;
-        player.rotation=Math.round(player.rotation/(Math.PI/2))*(Math.PI/2);
-      }else{
-        // Give the player a small amount of overlap before the block kills them.
-        // This prevents a tiny edge touch from feeling like an instant death.
-        const overlapX=Math.min(playerRight,r.x+r.w)-Math.max(player.x,r.x);
-        const overlapY=Math.min(playerBottom,r.y+r.h)-Math.max(player.y,r.y);
-        const BLOCK_DEATH_PENETRATION=10;
-
-        if(overlapX>=BLOCK_DEATH_PENETRATION && overlapY>=BLOCK_DEATH_PENETRATION){
-          deathReason="block";
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  if(damageFromSpikes())dead=true;
-  if(!dead && solidBlocks())dead=true;
-}
-function drawNexusAI(){
-  const x=770, y=385;
-  ctx.save();
-
-  // Static dialogue panel — this character is intentionally a talk-only NPC.
-  const bx=x-118, by=y-154, bw=300, bh=72;
-  ctx.fillStyle="rgba(7,5,18,.94)";
-  ctx.strokeStyle="#00e5ff";
-  ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,12); ctx.fill(); ctx.stroke();
-  ctx.fillStyle="#eef2ff"; ctx.font="700 13px system-ui";
-  ctx.fillText("NEXUS AI",bx+14,by+20);
-  ctx.fillStyle="#bfefff"; ctx.font="600 14px system-ui";
-  ctx.fillText("Reality merge detected.",bx+14,by+42);
-  ctx.fillStyle="#8f8aa8"; ctx.font="11px system-ui";
-  ctx.fillText("Tap me to talk",bx+14,by+60);
-
-  ctx.translate(x,y);
-
-  const aura=ctx.createRadialGradient(0,0,15,0,0,75);
-  aura.addColorStop(0,"rgba(0,229,255,.18)");
-  aura.addColorStop(1,"rgba(0,229,255,0)");
-  ctx.fillStyle=aura; ctx.fillRect(-75,-90,150,170);
-
-  // Legs
-  ctx.fillStyle="#10131d"; ctx.strokeStyle="#7cf7ff"; ctx.lineWidth=2;
-  ctx.fillRect(-31,30,22,55); ctx.strokeRect(-31,30,22,55);
-  ctx.fillRect(9,30,22,55); ctx.strokeRect(9,30,22,55);
-  ctx.fillStyle="#20283a"; ctx.fillRect(-36,82,32,10); ctx.fillRect(4,82,32,10);
-
-  // Torso
-  const body=ctx.createLinearGradient(-42,-20,42,55);
-  body.addColorStop(0,"#273047"); body.addColorStop(1,"#0c101a");
-  ctx.fillStyle=body;
-  ctx.beginPath(); ctx.roundRect(-42,-24,84,66,14); ctx.fill(); ctx.stroke();
-
-  // Reality seam
-  ctx.strokeStyle="#ff2e93"; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(5,-21); ctx.lineTo(-3,0); ctx.lineTo(8,18); ctx.lineTo(0,39); ctx.stroke();
-
-  // Core
-  ctx.shadowColor="#00e5ff"; ctx.shadowBlur=12; ctx.fillStyle="#9fffff";
-  ctx.beginPath(); ctx.arc(0,8,13,0,Math.PI*2); ctx.fill();
-  ctx.shadowBlur=0; ctx.strokeStyle="#00e5ff";
-  ctx.beginPath(); ctx.arc(0,8,19,0,Math.PI*2); ctx.stroke();
-
-  // Arms
-  ctx.strokeStyle="#7cf7ff"; ctx.lineWidth=9; ctx.lineCap="round";
-  ctx.beginPath(); ctx.moveTo(-39,-12); ctx.lineTo(-58,28); ctx.moveTo(39,-12); ctx.lineTo(58,28); ctx.stroke();
-  ctx.fillStyle="#172033";
-  ctx.beginPath(); ctx.arc(-58,31,7,0,Math.PI*2); ctx.arc(58,31,7,0,Math.PI*2); ctx.fill();
-  ctx.lineCap="butt";
-
-  // Head + visor
-  const head=ctx.createLinearGradient(-39,-80,39,-20);
-  head.addColorStop(0,"#34405a"); head.addColorStop(1,"#111722");
-  ctx.fillStyle=head; ctx.strokeStyle="#b6ffff"; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(-39,-86,78,58,15); ctx.fill(); ctx.stroke();
-  ctx.fillStyle="#050b13"; ctx.strokeStyle="#00e5ff";
-  ctx.beginPath(); ctx.roundRect(-30,-72,60,25,9); ctx.fill(); ctx.stroke();
-  ctx.shadowColor="#00e5ff"; ctx.shadowBlur=8; ctx.fillStyle="#eaffff";
-  ctx.fillRect(-19,-63,10,5); ctx.fillRect(9,-63,10,5); ctx.shadowBlur=0;
-
-  // Reality-fracture details
-  ctx.strokeStyle="#ffb020"; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(-30,-31); ctx.lineTo(-20,-25); ctx.lineTo(-25,-19);
-  ctx.moveTo(27,-83); ctx.lineTo(34,-77); ctx.stroke();
-
-  ctx.fillStyle="#8f8aa8"; ctx.font="700 9px system-ui"; ctx.textAlign="center";
-  ctx.fillText("NEXUS",0,104);
-  ctx.restore();
-}
-
-function draw(){
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle="#171a22";ctx.fillRect(0,0,w,h);
-
-  ctx.fillStyle="#303640";ctx.fillRect(0,h-groundHeight,w,groundHeight);
-  ctx.fillStyle="#59616d";ctx.fillRect(0,h-groundHeight,w,6);
-
-  ctx.strokeStyle="#3d4550";ctx.lineWidth=2;
-  const start=Math.floor(camera/50)*50;
-  for(let x=start;x<camera+w+50;x+=50){
-    ctx.strokeRect(x-camera,h-groundHeight+6,50,50);
-  }
-
-  for(const b of blocks){
-    const r=blockRect(b),x=r.x-camera;
-    if(x+r.w<0||x>w)continue;
-    ctx.fillStyle="#59616d";ctx.fillRect(x,r.y,r.w,r.h);
-    ctx.strokeStyle="#7b8796";ctx.lineWidth=2;ctx.strokeRect(x,r.y,r.w,r.h);
-  }
+    for(const b of blocks){drawStyledBlock(ctx,b,blocks,h-groundHeight,camera);}
 
   for(const s of spikes){
     const x=s.x-camera;
@@ -537,8 +420,7 @@ const paintCanvas=document.getElementById("paintCanvas");
 let painting=false;
 paintCanvas.addEventListener("pointerdown",e=>{e.preventDefault();paintHistory.push(paintSnapshot());painting=true;paintAtEvent(e);paintCanvas.setPointerCapture?.(e.pointerId)});
 paintCanvas.addEventListener("pointermove",e=>{if(painting){e.preventDefault();paintAtEvent(e)}});
-paintCanvas.addEventListener("pointerup",()=>painting=false);
-paintCanvas.addEventListener("pointercancel",()=>painting=false);
+paintCanvas.addEventListener("pointerup",()=>painting=false);paintCanvas.addEventListener("pointercancel",()=>painting=false);
 
 document.getElementById("characterColor").addEventListener("input",e=>{
   characterColor=e.target.value.toUpperCase();
@@ -697,8 +579,7 @@ function resizeEditor(){
   ectx.setTransform(scale,0,0,scale,0,0);
 }
 function editorSize(){
-  const rect=editorCanvas.getBoundingClientRect();
-  return {width:rect.width,height:rect.width*DESIGN_H/DESIGN_W};
+  const rect=editorCanvas.getBoundingClientRect();  return {width:rect.width,height:rect.width*DESIGN_H/DESIGN_W};
 }
 function editorPoint(e){
   const rect=editorCanvas.getBoundingClientRect();
@@ -838,15 +719,8 @@ function drawEditor(){
   }
   ectx.strokeStyle="#4dd7ff";ectx.lineWidth=3;
   ectx.beginPath();ectx.moveTo(0,DESIGN_H-groundHeight);ectx.lineTo(DESIGN_W,DESIGN_H-groundHeight);ectx.stroke();
-
   const floor=DESIGN_H-groundHeight;
-  for(const b of editorObjects.blocks){
-    const r={x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
-    const x=r.x-editorCamera;
-    if(x+r.w<0||x>DESIGN_W)continue;
-    ectx.fillStyle="#59616d";ectx.fillRect(x,r.y,r.w,r.h);
-    ectx.strokeStyle="#7be4ff";ectx.lineWidth=2;ectx.strokeRect(x,r.y,r.w,r.h);
-  }
+  for(const b of editorObjects.blocks){drawStyledBlock(ectx,b,editorObjects.blocks,floor,editorCamera);}
   for(const s of editorObjects.spikes){
     const x=s.x-editorCamera;
     if(x<-s.w||x>DESIGN_W)continue;
@@ -918,133 +792,3 @@ function pasteEditorObject(){
   if(!editorClipboard){document.getElementById("editorStatus").textContent="PASTE · nothing copied yet";return;}
   pushEditorHistory();
   const d={...editorClipboard.data,x:editorClipboard.data.x+40};
-  if(editorClipboard.type==="spike"){
-    editorObjects.spikes.push(d);
-    editorSelected={type:"spike",index:editorObjects.spikes.length-1};
-  }else{
-    editorObjects.blocks.push(d);
-    editorSelected={type:"block",index:editorObjects.blocks.length-1};
-  }
-  editorModeTab="edit";
-  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="edit"));
-  document.getElementById("editorStatus").textContent="PASTED · drag the copy into place";
-  drawEditor();
-}
-function moveTool(){
-  editorModeTab="edit";
-  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="edit"));
-  document.getElementById("editorStatus").textContent="MOVE · tap a block, then drag it";
-}
-function loadOfficialLevels(){
-  try{
-    const data=JSON.parse(localStorage.getItem(OFFICIAL_LEVELS_KEY)||"[]");
-    return Array.isArray(data)?data.filter(x=>x&&Array.isArray(x.blocks)&&Array.isArray(x.spikes)):[];
-  }catch(e){return []}
-}
-function saveOfficialLevel(){
-  if(!creatorTestBeat){
-    document.getElementById("editorStatus").textContent="PUBLISH LOCKED · BEAT YOUR LEVEL IN TEST MODE FIRST";
-    return;
-  }
-  const name=(document.getElementById("levelName")?.value||"NEXUS CREATION").trim().slice(0,28)||"NEXUS CREATION";
-  const blocksCopy=editorObjects.blocks.map(o=>({...o}));
-  const spikesCopy=editorObjects.spikes.map(o=>({...o}));
-  if(!blocksCopy.length&&!spikesCopy.length){
-    document.getElementById("editorStatus").textContent="PUBLISH FAILED · ADD SOME OBJECTS FIRST";
-    return;
-  }
-  const levels=loadOfficialLevels();
-  const id=Date.now();
-  levels.push({id,name,blocks:blocksCopy,spikes:spikesCopy,publishedAt:new Date().toISOString()});
-  localStorage.setItem(OFFICIAL_LEVELS_KEY,JSON.stringify(levels));
-  localStorage.setItem(CREATOR_SAVE_KEY,JSON.stringify(editorObjects));
-  refreshOfficialLevelMenu();
-  document.getElementById("editorStatus").textContent="✓ OFFICIAL LEVEL PUBLISHED · "+name;
-}
-function playOfficialLevel(id){
-  const level=loadOfficialLevels().find(x=>String(x.id)===String(id));
-  if(!level)return;
-  blocks=level.blocks.map(o=>({...o}));
-  spikes=level.spikes.map(o=>({...o}));
-  startGame();
-}
-function refreshOfficialLevelMenu(){
-  const container=document.getElementById("officialLevels");
-  if(!container)return;
-  container.innerHTML="";
-  for(const level of loadOfficialLevels()){
-    const button=document.createElement("button");
-    button.className="level officialLevel";button.type="button";button.dataset.officialId=level.id;
-    button.innerHTML="OFFICIAL · "+escapeHtml(level.name)+' <span>CREATOR LEVEL</span>';
-    button.addEventListener("click",()=>playOfficialLevel(level.id));
-    container.appendChild(button);
-  }
-}
-function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
-function setEditorTool(tool){
-  editorTool=tool;
-  document.querySelectorAll(".editorTools .tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
-  document.getElementById("editorStatus").textContent=tool.toUpperCase()+" selected · tap the grid to place";
-}
-
-document.getElementById("creator").addEventListener("click",enterCreator);
-document.getElementById("editorMove").addEventListener("click",moveTool);
-document.getElementById("editorCopy").addEventListener("click",copyEditorObject);
-document.getElementById("editorPaste").addEventListener("click",pasteEditorObject);
-document.getElementById("publishLevel").addEventListener("click",saveOfficialLevel);
-refreshOfficialLevelMenu();
-document.getElementById("unlockCreator").addEventListener("click",unlockCreator);
-document.getElementById("cancelCreator").addEventListener("click",()=>{
-  hideOverlay(passwordMenu);showOverlay(document.getElementById("menu"));
-});
-creatorPassword.addEventListener("keydown",e=>{if(e.key==="Enter")unlockCreator()});
-document.getElementById("closeEditor").addEventListener("click",closeEditor);
-document.querySelectorAll(".editorTools .tool").forEach(b=>b.addEventListener("click",()=>{
-  setEditorTool(b.dataset.tool);
-  editorModeTab="build";
-  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="build"));
-}));
-document.querySelectorAll(".modeTab").forEach(b=>b.addEventListener("click",()=>{
-  editorModeTab=b.dataset.mode;
-  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x===b));
-  document.getElementById("editorStatus").textContent=editorModeTab==="build"?"BUILD · choose an object, then tap the grid":editorModeTab==="edit"?"EDIT · tap an object to select and drag it":"DELETE · tap an object to remove it";
-}));
-document.getElementById("editorUndo").addEventListener("click",undoEditor);
-document.getElementById("editorRedo").addEventListener("click",redoEditor);
-document.getElementById("editorGrid").addEventListener("click",e=>{
-  editorGridOn=!editorGridOn;e.target.textContent="GRID: "+(editorGridOn?"ON":"OFF");drawEditor();
-});
-document.getElementById("editorSnap").addEventListener("click",e=>{
-  editorSnapOn=!editorSnapOn;e.target.textContent="SNAP: "+(editorSnapOn?"ON":"OFF");
-});
-document.getElementById("editorZoomOut").addEventListener("click",()=>{editorZoom=Math.max(.65,editorZoom-.15);drawEditor()});
-document.getElementById("editorZoomIn").addEventListener("click",()=>{editorZoom=Math.min(1.8,editorZoom+.15);drawEditor()});
-document.getElementById("editorLeft").addEventListener("click",()=>{editorCamera=Math.max(0,editorCamera-100);drawEditor()});
-document.getElementById("editorRight").addEventListener("click",()=>{editorCamera=Math.min(19000,editorCamera+100);drawEditor()});
-document.getElementById("saveLevel").addEventListener("click",saveCreatorLevel);
-document.getElementById("testLevel").addEventListener("click",testCreatorLevel);
-document.getElementById("clearLevel").addEventListener("click",clearCreatorLevel);
-editorCanvas.addEventListener("pointerdown",e=>{
-  e.preventDefault();
-  editorLastPointer=editorWorldPoint(e);
-  placeEditorObject(e);
-  editorCanvas.setPointerCapture?.(e.pointerId);
-});
-editorCanvas.addEventListener("pointermove",e=>{if(editorModeTab==="edit"&&editorDragging){e.preventDefault();moveSelectedEditor(e)}});
-editorCanvas.addEventListener("pointerup",finishEditorDrag);
-editorCanvas.addEventListener("pointercancel",finishEditorDrag);
-addEventListener("resize",()=>{if(editorMode){resizeEditor();drawEditor()}});
-
-// Keep the normal level select working with the current saved creator level.
-document.querySelector('.level[data-level="1"]').addEventListener("click",()=>{
-  const saved=localStorage.getItem(CREATOR_SAVE_KEY);
-  if(saved){
-    try{
-      const data=JSON.parse(saved);
-      if(Array.isArray(data.blocks)&&Array.isArray(data.spikes)){
-        blocks=data.blocks.filter(validBlock).map(o=>({...o}));
-        spikes=data.spikes.filter(validSpike).map(o=>({...o}));
-      }
-    }catch(e){}
-  }
-});
