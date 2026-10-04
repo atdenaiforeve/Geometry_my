@@ -298,9 +298,33 @@
         radial-gradient(circle at 13% 46%, rgba(255,120,210,0.2) 0 2%, rgba(125,255,240,0.08) 7%, transparent 18%),
         radial-gradient(circle at 13% 46%, transparent 0 9%, rgba(191,168,255,0.15) 10%, transparent 18%);
     }
+    /* Level Maker leaves the Nexus by pulling away until everything goes black. */
+    body.maker-transition #nexus-scene {
+      transform-origin: 50% 43%;
+      transform: scale(0.12);
+      filter: brightness(0.05) saturate(0.45);
+    }
+    body.maker-transition .menu {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #maker-blackout {
+      position: fixed;
+      inset: 0;
+      z-index: 95;
+      pointer-events: none;
+      background: #000;
+      opacity: 0;
+      transition: opacity 0.82s ease;
+    }
+    body.maker-transition #maker-blackout {
+      opacity: 1;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       #nexus-scene { transition: none; }
       body.rift-transition #nexus-scene { transform: scale(1); }
+      body.maker-transition #nexus-scene { transform: scale(1); }
       .title, .tagline, .buttons { animation: none; }
       .btn { transition: none; }
     }
@@ -328,6 +352,7 @@
   </main>
 
   <div id="rift-transition" aria-hidden="true"></div>
+  <div id="maker-blackout" aria-hidden="true"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 
@@ -410,7 +435,36 @@
       setTimeout(() => finish(false), 1050);
     },
     'level-maker'() {
-      window.location.assign(new URL('game.html?screen=maker', window.location.href).href);
+      const target = new URL('game.html?screen=maker', window.location.href).href;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let finished = false;
+
+      const finish = (skip = false) => {
+        if (finished) return;
+        finished = true;
+        window.removeEventListener('keydown', skipHandler);
+        window.removeEventListener('pointerdown', skipHandler);
+        window.removeEventListener('touchstart', skipHandler);
+        if (skip || reduced) {
+          window.location.assign(target);
+          return;
+        }
+        document.body.classList.add('maker-transition');
+        setTimeout(() => window.location.assign(target), 1050);
+      };
+
+      const skipHandler = (e) => {
+        if (e.type === 'keydown' && ![' ', 'Enter', 'Escape'].includes(e.key)) return;
+        e.preventDefault();
+        finish(true);
+      };
+
+      // Level Maker pulls the camera away from the Nexus, then the screen goes black.
+      window.addEventListener('keydown', skipHandler);
+      window.addEventListener('pointerdown', skipHandler);
+      window.addEventListener('touchstart', skipHandler, { passive: false });
+      document.body.classList.add('maker-transition');
+      setTimeout(() => finish(false), 1050);
     },
   };
 
