@@ -479,6 +479,12 @@ document.getElementById("play").addEventListener("click",()=>{
   document.getElementById("levelMenu").classList.remove("hidden");
   document.getElementById("levelMenu").style.display="flex";
 });
+document.getElementById("levelSelect").addEventListener("click",()=>{
+  playing=false;
+  hideOverlay(document.getElementById("menu"));
+  showOverlay(document.getElementById("levelMenu"));
+  updateBestLabel();
+});
 document.getElementById("back").addEventListener("click",()=>{
   playing=false;
   document.getElementById("levelMenu").classList.add("hidden");
