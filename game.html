@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Into the Nexus</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="loading" class="menu">
+    <h1>INTO THE NEXUS</h1><div class="loader"></div><p id="loadingText">LOADING...</p>
+  </div>
+  <canvas id="game" aria-label="Into the Nexus 2D game"></canvas>
+
+  <div id="menu" class="menu hidden">
+    <h1>INTO THE NEXUS</h1>
+    <button id="play" type="button">PLAY</button>
+    <button id="creator" type="button">LEVEL MAKER</button>
+    <button id="customize" type="button">CUSTOMIZE</button>
+  </div>
+
+  <div id="customizeMenu" class="menu hidden">
+    <h2>CUSTOMIZE CHARACTER</h2>
+    <div class="customizeModeTabs">
+      <button id="autoColorMode" class="customizeMode active" type="button">AUTO COLOUR</button>
+      <button id="proCreateMode" class="customizeMode" type="button">PRO CREATE</button>
+    </div>
+
+    <div id="autoColorPanel" class="customizePanel">
+      <div class="characterPreview"><canvas id="characterPreviewCanvas" width="220" height="220"></canvas></div>
+      <div class="colorControls">
+        <label for="characterColor">CHARACTER COLOUR</label>
+        <input id="characterColor" type="color" value="#4dd7ff" aria-label="Character colour">
+        <span id="characterColorValue">#4DD7FF</span>
+      </div>
+    </div>
+
+    <div id="proCreatePanel" class="customizePanel hidden">
+      <p class="paintHint">PAINT EVERY CELL · CHOOSE A COLOUR · TAP OR DRAG</p>
+      <div class="paintWorkspace">
+        <canvas id="paintCanvas" width="360" height="360" aria-label="Character paint editor"></canvas>
+        <div class="paintSide">
+          <label for="paintColor">PAINT COLOUR</label>
+          <input id="paintColor" type="color" value="#4dd7ff" aria-label="Paint colour">
+          <span id="paintColorValue">#4DD7FF</span>
+          <button id="paintEraser" type="button">ERASER</button>
+          <button id="paintClear" type="button">CLEAR</button>
+          <button id="paintUndo" type="button">UNDO</button>
+          <button id="paintDone" type="button">DONE</button>
+        </div>
+      </div>
+    </div>
+    <button id="customizeBack" type="button">BACK</button>
+  </div>
+
+  <div id="levelMenu" class="menu hidden">
+    <h2>LEVEL SELECT</h2>
+    <button class="level" data-level="1" type="button">LEVEL 1 <span id="level1Best">BEST: 0% · FIRST FLIGHT</span></button>
+    <button class="level" data-level="2" type="button">LEVEL 2 🔒 <span>LOCKED</span></button>
+    <div id="officialLevels" class="officialLevels" aria-label="Official creator levels"></div>
+    <button id="back" type="button">BACK</button>
+  </div>
+
+  <div id="passwordMenu" class="menu hidden">
+    <h2>CREATOR ACCESS</h2><p>ENTER CREATOR PASSWORD</p>
+    <input id="creatorPassword" type="password" inputmode="text" autocomplete="off" maxlength="32" placeholder="PASSWORD">
+    <button id="unlockCreator" type="button">UNLOCK</button><button id="cancelCreator" type="button">BACK</button>
+    <p id="passwordError" class="errorText" aria-live="polite"></p>
+  </div>
+
+  <div id="editorMenu" class="editorOverlay hidden">
+    <div class="editorPanel">
+      <div class="editorTop">
+        <input id="levelName" class="levelName" maxlength="28" autocomplete="off" placeholder="LEVEL NAME" aria-label="Level name">
+        <div><h2>LEVEL MAKER</h2><p id="editorStatus">BLOCK selected · tap the grid to place</p></div>
+        <button id="closeEditor" type="button">EXIT</button>
+      </div>
+      <div class="editorModeTabs">
+        <button id="editorMove" type="button">MOVE</button><button id="editorCopy" type="button">COPY</button><button id="editorPaste" type="button">PASTE</button>
+        <button class="modeTab active" data-mode="build" type="button">BUILD</button><button class="modeTab" data-mode="edit" type="button">EDIT</button><button class="modeTab" data-mode="delete" type="button">DELETE</button>
+      </div>
+      <div class="editorTools">
+        <button class="tool active" data-tool="block" type="button">BLOCK</button><button class="tool" data-tool="spike" type="button">SPIKE</button><button class="tool" data-tool="platform" type="button">PLATFORM</button><button class="tool" data-tool="energy" type="button">ENERGY</button><button class="tool" data-tool="reality" type="button">REALITY</button><button class="tool" data-tool="erase" type="button">ERASE</button>
+      </div>
+      <div class="editorQuick">
+        <button id="editorUndo" type="button">↶ UNDO</button><button id="editorRedo" type="button">↷ REDO</button><button id="editorGrid" type="button">GRID: ON</button><button id="editorSnap" type="button">SNAP: ON</button><button id="editorZoomOut" type="button">−</button><button id="editorZoomIn" type="button">+</button><button id="editorLeft" type="button">◀</button><button id="editorRight" type="button">▶</button>
+      </div>
+      <div class="editorCanvasWrap"><canvas id="editorCanvas" aria-label="Level maker canvas"></canvas></div>
+      <div class="editorActions"><button id="saveLevel" type="button">SAVE LEVEL</button><button id="publishLevel" type="button">PUBLISH AS OFFICIAL</button><button id="testLevel" type="button">TEST LEVEL</button><button id="clearLevel" type="button">CLEAR</button></div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+  <script>
+    (()=>{const loading=document.getElementById("loading"),menu=document.getElementById("menu");
+      function showMainMenu(){loading.classList.add("hidden");menu.classList.remove("hidden");loading.style.display="none";menu.style.display="flex"}
+      const boot=()=>setTimeout(showMainMenu,700);
+      if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
+    })();
+  </script>
+</body>
+</html>
