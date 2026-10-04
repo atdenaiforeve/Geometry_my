@@ -329,7 +329,12 @@
       .btn { transition: none; }
     }
   </style>
-</head>
+<style>
+    /* Performance: let the browser use the display's native frame pacing without forcing extra work. */
+    html, body { contain: layout style; }
+    #nexus-scene { image-rendering: auto; }
+  </style>
+  </head>
 <body>
   <div id="nexus-loading" aria-hidden="true">
     <div class="loading-core">
