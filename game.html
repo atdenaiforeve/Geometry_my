@@ -123,12 +123,21 @@
         }
       }
 
-      // Show the destination as soon as this page is ready; no artificial delay.
-      const boot = showMainMenu;
+      // FAST LOADING: hide the loading screen on the first usable frame.
+      // A 750ms failsafe guarantees it can never sit on screen for 1 second.
+      let booted = false;
+      const boot = () => {
+        if (booted) return;
+        booted = true;
+        showMainMenu();
+      };
+      const bootWhenReady = () => requestAnimationFrame(boot);
+      const failsafe = setTimeout(boot, 750);
+
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", boot, {once: true});
+        document.addEventListener("DOMContentLoaded", bootWhenReady, {once: true});
       } else {
-        boot();
+        bootWhenReady();
       }
     })();
   </script>
