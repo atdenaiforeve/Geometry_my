@@ -18,6 +18,17 @@
     <button id="levelSelect" type="button">LEVEL SELECT</button>
     <button id="creator" type="button">LEVEL MAKER</button>
     <button id="customize" type="button">CUSTOMIZE</button>
+    <button id="shop" type="button">SHOP</button>
+  </div>
+
+  <div id="shopMenu" class="menu hidden">
+    <h2>NEXUS SHOP</h2>
+    <div class="shopRobot" aria-label="Nexus AI shopkeeper">
+      <canvas id="shopRobotCanvas" width="260" height="300"></canvas>
+    </div>
+    <p class="shopLine">NEXUS AI IS WAITING.</p>
+    <p class="shopHint">THE SHOP WILL EXPAND WITH MORE ITEMS.</p>
+    <button id="shopBack" type="button">BACK</button>
   </div>
 
   <div id="customizeMenu" class="menu hidden">
@@ -92,6 +103,76 @@
   </div>
 
   <script src="game.js"></script>
+<script>
+(() => {
+  const shop = document.getElementById("shop");
+  const shopMenu = document.getElementById("shopMenu");
+  const shopBack = document.getElementById("shopBack");
+  const canvas = document.getElementById("shopRobotCanvas");
+  const ctx = canvas && canvas.getContext("2d");
+
+  function drawShopRobot(){
+    if(!ctx)return;
+    ctx.clearRect(0,0,260,300);
+    ctx.save();
+    ctx.translate(130,170);
+
+    ctx.fillStyle="rgba(0,229,255,.12)";
+    ctx.beginPath();ctx.arc(0,0,105,0,Math.PI*2);ctx.fill();
+
+    ctx.fillStyle="#10131d";ctx.strokeStyle="#7cf7ff";ctx.lineWidth=3;
+    ctx.fillRect(-36,38,25,75);ctx.strokeRect(-36,38,25,75);
+    ctx.fillRect(11,38,25,75);ctx.strokeRect(11,38,25,75);
+    ctx.fillStyle="#20283a";ctx.fillRect(-43,106,35,11);ctx.fillRect(8,106,35,11);
+
+    const body=ctx.createLinearGradient(-48,-15,48,55);
+    body.addColorStop(0,"#273047");body.addColorStop(1,"#0c101a");
+    ctx.fillStyle=body;
+    ctx.beginPath();ctx.roundRect(-48,-20,96,70,15);ctx.fill();ctx.stroke();
+
+    ctx.strokeStyle="#ff2e93";ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(6,-17);ctx.lineTo(-5,3);ctx.lineTo(8,24);ctx.lineTo(0,48);ctx.stroke();
+
+    ctx.shadowColor="#00e5ff";ctx.shadowBlur=18;ctx.fillStyle="#9fffff";
+    ctx.beginPath();ctx.arc(0,12,15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle="#00e5ff";ctx.beginPath();ctx.arc(0,12,22,0,Math.PI*2);ctx.stroke();
+
+    ctx.strokeStyle="#7cf7ff";ctx.lineWidth=10;ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(-45,-7);ctx.lineTo(-68,31);ctx.moveTo(45,-7);ctx.lineTo(68,31);ctx.stroke();
+    ctx.lineCap="butt";
+
+    const head=ctx.createLinearGradient(-45,-92,45,-25);
+    head.addColorStop(0,"#34405a");head.addColorStop(1,"#111722");
+    ctx.fillStyle=head;ctx.strokeStyle="#b6ffff";ctx.lineWidth=3;
+    ctx.beginPath();ctx.roundRect(-45,-94,90,65,16);ctx.fill();ctx.stroke();
+
+    ctx.fillStyle="#050b13";ctx.strokeStyle="#00e5ff";
+    ctx.beginPath();ctx.roundRect(-34,-79,68,28,10);ctx.fill();ctx.stroke();
+    ctx.fillStyle="#eaffff";ctx.shadowColor="#00e5ff";ctx.shadowBlur=10;
+    ctx.fillRect(-22,-68,12,6);ctx.fillRect(10,-68,12,6);ctx.shadowBlur=0;
+
+    ctx.fillStyle="#8f8aa8";ctx.font="700 10px system-ui";ctx.textAlign="center";
+    ctx.fillText("NEXUS AI",0,137);
+    ctx.restore();
+  }
+
+  if(shop){
+    shop.addEventListener("click",()=>{
+      playing=false;
+      hideOverlay(document.getElementById("menu"));
+      showOverlay(shopMenu);
+      drawShopRobot();
+    });
+  }
+  if(shopBack){
+    shopBack.addEventListener("click",()=>{
+      hideOverlay(shopMenu);
+      showOverlay(document.getElementById("menu"));
+    });
+  }
+})();
+</script>
+
   <script>
     (() => {
       const loading = document.getElementById("loading");
