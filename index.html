@@ -59,6 +59,75 @@
       display: block;
     }
 
+
+    /* ---------- Boot loading screen ---------- */
+    #nexus-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(100, 85, 190, 0.16), transparent 38%),
+        #080916;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+    #nexus-loading.done {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .loading-core {
+      width: min(520px, 82vw);
+      text-align: center;
+    }
+    .loading-kicker {
+      font-size: clamp(0.62rem, 1.8vw, 0.8rem);
+      letter-spacing: 0.42em;
+      margin-right: -0.42em;
+      opacity: 0.65;
+      margin-bottom: 14px;
+    }
+    .loading-title {
+      font-size: clamp(1.8rem, 7vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      margin-right: -0.13em;
+      text-shadow: 0 0 28px rgba(191, 168, 255, 0.38);
+    }
+    .loading-sub {
+      margin-top: 18px;
+      font-size: 0.7rem;
+      letter-spacing: 0.34em;
+      margin-right: -0.34em;
+      color: var(--text-dim);
+    }
+    .loading-track {
+      height: 4px;
+      margin: 22px auto 12px;
+      width: min(360px, 70vw);
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      box-shadow: 0 0 18px rgba(127, 243, 230, 0.12);
+    }
+    #nexus-loading-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 16px rgba(127, 243, 230, 0.45);
+      transition: width 0.18s ease;
+    }
+    .loading-status {
+      min-height: 1em;
+      font-size: 0.62rem;
+      letter-spacing: 0.24em;
+      color: var(--text-dim);
+    }
+
     /* ---------- Layout ---------- */
     .menu {
       position: fixed;
@@ -227,16 +296,16 @@
 
   const ACTIONS = {
     play() {
-      window.location.href = 'game.html?start=1';
+      window.location.assign(new URL('game.html?start=1', window.location.href).href);
     },
     'level-select'() {
-      window.location.href = 'game.html?screen=levels';
+      window.location.assign(new URL('game.html?screen=levels', window.location.href).href);
     },
     customize() {
-      window.location.href = 'game.html?screen=customize';
+      window.location.assign(new URL('game.html?screen=customize', window.location.href).href);
     },
     'level-maker'() {
-      window.location.href = 'game.html?screen=maker';
+      window.location.assign(new URL('game.html?screen=maker', window.location.href).href);
     },
   };
 
