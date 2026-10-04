@@ -70,8 +70,8 @@
 
   <nav class="buttons" aria-label="Main menu">
     <button class="btn btn-primary" type="button" data-action="play">PLAY</button>
-    <button class="btn" type="button" data-action="level-select">LEVEL SELECT</button>
     <button class="btn" type="button" data-action="customize">CUSTOMIZE</button>
+    <button class="btn" type="button" data-action="shop">SHOP</button>
     <button class="btn" type="button" data-action="level-maker">LEVEL MAKER</button>
   </nav>
 </main>
@@ -83,8 +83,8 @@
   'use strict';
 
   const ACTIONS = {
-    play(){ window.location.assign(new URL('game.html?start=1', location.href).href); },
-    'level-select'(){ window.location.assign(new URL('game.html?screen=levels', location.href).href); },
+    play(){ window.location.assign(new URL('game.html?screen=levels', location.href).href); },
+    shop(){ window.location.assign(new URL('game.html?screen=shop', location.href).href); },
     customize(){ window.location.assign(new URL('game.html?screen=customize', location.href).href); },
     'level-maker'(){ window.location.assign(new URL('game.html?screen=maker', location.href).href); }
   };
