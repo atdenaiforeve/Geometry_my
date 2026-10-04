@@ -378,6 +378,7 @@
   const ACTIONS = {
     play() {
       const target = new URL('game.html?start=1', window.location.href).href;
+    // Keep the destination ready while the Nexus zooms; navigate only after the transition finishes.
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let finished = false;
 
