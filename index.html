@@ -72,7 +72,7 @@
         #080916;
       opacity: 1;
       visibility: visible;
-      transition: opacity 0.55s ease, visibility 0.55s ease;
+      transition: opacity 0.08s linear, visibility 0s linear 0.08s;
     }
     #nexus-loading.done {
       opacity: 0;
@@ -365,6 +365,22 @@
       <button class="btn" type="button" data-action="level-maker">LEVEL MAKER</button>
     </nav>
   </main>
+
+  <script>
+  (() => {
+    const loading = document.getElementById('nexus-loading');
+    const bar = document.getElementById('nexus-loading-bar');
+    const status = document.querySelector('.loading-status');
+    if (!loading) return;
+    const finish = () => {
+      if (bar) bar.style.width = '100%';
+      if (status) status.textContent = 'NEXUS ONLINE';
+      loading.classList.add('done');
+      setTimeout(() => loading.remove(), 90);
+    };
+    requestAnimationFrame(finish);
+  })();
+  </script>
 
   <div id="rift-transition" aria-hidden="true"></div>
   <div id="maker-blackout" aria-hidden="true"></div>
