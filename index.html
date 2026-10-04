@@ -255,7 +255,37 @@
       .btn, .btn-primary { min-height: 48px; font-size: 0.8rem; letter-spacing: 0.18em; }
     }
 
+    /* ---------- Rift transition into the game ---------- */
+    #nexus-scene {
+      transform: scale(1);
+      transform-origin: 63% 19%;
+      transition: transform 1.05s cubic-bezier(0.72, 0, 0.15, 1), filter 0.7s ease;
+    }
+    body.rift-transition #nexus-scene {
+      transform: scale(13);
+      filter: brightness(1.35) saturate(1.35);
+    }
+    body.rift-transition .menu {
+      opacity: 0;
+      transition: opacity 0.32s ease;
+    }
+    #rift-transition {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      pointer-events: none;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 63% 19%, rgba(125,255,240,0.22) 0 2%, rgba(125,255,240,0.08) 7%, transparent 18%),
+        radial-gradient(circle at 63% 19%, transparent 0 9%, rgba(255,120,210,0.12) 10%, transparent 18%);
+      transition: opacity 0.2s ease;
+    }
+    body.rift-transition #rift-transition {
+      opacity: 1;
+    }
     @media (prefers-reduced-motion: reduce) {
+      #nexus-scene { transition: none; }
+      body.rift-transition #nexus-scene { transform: scale(1); }
       .title, .tagline, .buttons { animation: none; }
       .btn { transition: none; }
     }
@@ -282,6 +312,7 @@
     </nav>
   </main>
 
+  <div id="rift-transition" aria-hidden="true"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 
@@ -296,7 +327,37 @@
 
   const ACTIONS = {
     play() {
-      window.location.assign(new URL('game.html?start=1', window.location.href).href);
+      const target = new URL('game.html?start=1', window.location.href).href;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let finished = false;
+
+      const finish = (skip = false) => {
+        if (finished) return;
+        finished = true;
+        window.removeEventListener('keydown', skipHandler);
+        window.removeEventListener('pointerdown', skipHandler);
+        window.removeEventListener('touchstart', skipHandler);
+        if (skip || reduced) {
+          window.location.assign(target);
+          return;
+        }
+        document.body.classList.add('rift-transition');
+        setTimeout(() => window.location.assign(target), 1050);
+      };
+
+      const skipHandler = (e) => {
+        if (e.type === 'keydown' && ![' ', 'Enter', 'Escape'].includes(e.key)) return;
+        e.preventDefault();
+        finish(true);
+      };
+
+      // The PLAY button sends the camera through the rift at the upper-right
+      // of the Nexus scene. Tap/click, Space, Enter, or Escape skips it.
+      window.addEventListener('keydown', skipHandler, { once: false });
+      window.addEventListener('pointerdown', skipHandler, { once: false });
+      window.addEventListener('touchstart', skipHandler, { once: false, passive: false });
+      document.body.classList.add('rift-transition');
+      setTimeout(() => finish(false), 1050);
     },
     'level-select'() {
       window.location.assign(new URL('game.html?screen=levels', window.location.href).href);
