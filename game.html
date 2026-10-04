@@ -15,6 +15,7 @@
   <div id="menu" class="menu hidden">
     <h1>INTO THE NEXUS</h1>
     <button id="play" type="button">PLAY</button>
+    <button id="levelSelect" type="button">LEVEL SELECT</button>
     <button id="creator" type="button">LEVEL MAKER</button>
     <button id="customize" type="button">CUSTOMIZE</button>
   </div>
@@ -105,19 +106,16 @@
         menu.classList.remove("hidden");
         menu.style.display = "flex";
 
-        setTimeout(() => {
+        // Open the requested destination directly instead of simulating
+        // clicks. This keeps PLAY, LEVEL SELECT, CUSTOMIZE, and LEVEL MAKER
+        // independent and avoids timing/race-condition bugs.
+        requestAnimationFrame(() => {
           if (start) {
-            const play = document.getElementById("play");
-            if (play) {
-              play.click();
-              setTimeout(() => {
-                const level = document.querySelector('.level[data-level="1"]');
-                if (level) level.click();
-              }, 50);
-            }
+            const level = document.querySelector('.level[data-level="1"]');
+            if (level) level.click();
           } else if (screen === "levels") {
-            const play = document.getElementById("play");
-            if (play) play.click();
+            const levelMenu = document.getElementById("levelMenu");
+            if (levelMenu && typeof showOverlay === "function") showOverlay(levelMenu);
           } else if (screen === "customize") {
             const customize = document.getElementById("customize");
             if (customize) customize.click();
@@ -125,10 +123,11 @@
             const creator = document.getElementById("creator");
             if (creator) creator.click();
           }
-        }, 50);
+        });
       }
 
-      const boot = () => setTimeout(showMainMenu, 700);
+      // Keep the old game page responsive without a fake loading delay.
+      const boot = () => setTimeout(showMainMenu, 120);
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", boot, {once: true});
       } else {
