@@ -176,14 +176,14 @@ function doJump(){
   if(player.onGround){player.vy=jump;player.onGround=false}
 }
 addEventListener("keydown",e=>{
-  if(e.code==="Space"||e.code==="ArrowUp"){
+  if(e.code==="Space"||e.code==="ArrowUp"||e.code==="KeyW"){
     e.preventDefault();
     holding=true;
     doJump();
   }
 });
 addEventListener("keyup",e=>{
-  if(e.code==="Space"||e.code==="ArrowUp")holding=false;
+  if(e.code==="Space"||e.code==="ArrowUp"||e.code==="KeyW")holding=false;
 });
 canvas.addEventListener("pointerdown",e=>{
   if(editorMode){return;}
@@ -432,7 +432,8 @@ document.getElementById("customize").addEventListener("click",()=>{
   const value=document.getElementById("characterColorValue");
   if(input)input.value=characterColor;
   if(value)value.textContent=characterColor.toUpperCase();
-  switchCustomizeMode(characterMode);\n  drawCharacterPreview();
+  switchCustomizeMode(characterMode);
+  drawCharacterPreview();
 });
 document.getElementById("customizeBack").addEventListener("click",()=>{
   hideOverlay(document.getElementById("customizeMenu"));
