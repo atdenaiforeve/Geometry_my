@@ -227,21 +227,16 @@
 
   const ACTIONS = {
     play() {
-      // TODO: start the game / load the first level.
-      // NexusScene.pause();
-      toast('PLAY - not hooked up yet');
+      window.location.href = 'game.html?start=1';
     },
     'level-select'() {
-      // TODO: show your level select screen.
-      toast('LEVEL SELECT - not hooked up yet');
+      window.location.href = 'game.html?screen=levels';
     },
     customize() {
-      // TODO: show the player customization screen.
-      toast('CUSTOMIZE - not hooked up yet');
+      window.location.href = 'game.html?screen=customize';
     },
     'level-maker'() {
-      // TODO: open the level editor.
-      toast('LEVEL MAKER - not hooked up yet');
+      window.location.href = 'game.html?screen=maker';
     },
   };
 
