@@ -20,10 +20,6 @@
   <title>Into the Nexus</title>
 
   <!-- Optional font. Delete these 3 lines for zero external requests (a system font is used instead). -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
-
   <style>
     :root {
       --bg: #1a1c3d;
@@ -532,9 +528,17 @@
     return c;
   }
   const SPRITE_W = 420, SPRITE_H = 170;
-  const sprites = Array.from({ length: 5 }, () => makeCloudSprite(SPRITE_W, SPRITE_H, TINT_NORMAL));
-  const spriteTeal = makeCloudSprite(SPRITE_W, SPRITE_H, TINT_TEAL);
-  const spriteEmber = makeCloudSprite(SPRITE_W, SPRITE_H, TINT_EMBER);
+  let sprites = [];
+  let spriteTeal = null;
+  let spriteEmber = null;
+  let cloudSpritesReady = false;
+  function prepareCloudSprites() {
+    if (cloudSpritesReady) return;
+    cloudSpritesReady = true;
+    sprites = Array.from({ length: 5 }, () => makeCloudSprite(SPRITE_W, SPRITE_H, TINT_NORMAL));
+    spriteTeal = makeCloudSprite(SPRITE_W, SPRITE_H, TINT_TEAL);
+    spriteEmber = makeCloudSprite(SPRITE_W, SPRITE_H, TINT_EMBER);
+  }
 
   let clouds = [];
   function buildClouds() {
@@ -1697,6 +1701,13 @@
   document.addEventListener('visibilitychange', () => (document.hidden ? pause() : resume()));
 
   resize();
+  // Paint the actual menu first. Heavy cloud textures are prepared after the first visible frame.
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      prepareCloudSprites();
+      buildClouds();
+    }, 0);
+  });
   resume();
 
   // Rarely, one letter of the tagline slips into something else.
