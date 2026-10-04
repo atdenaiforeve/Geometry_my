@@ -25,3 +25,57 @@ canvas{display:block}.menu{position:fixed;inset:0;z-index:10;display:flex;flex-d
 /* ===== LEVEL MAKER ===== */
 .editorOverlay{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,1,7,.86);backdrop-filter:blur(8px)}.editorOverlay.hidden{display:none}.editorPanel{width:min(1100px,98vw);max-height:96vh;display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid #3b3158;background:linear-gradient(180deg,#100b1d,#07050e);box-shadow:0 0 50px rgba(138,77,255,.3);border-radius:12px}.editorTop{display:flex;align-items:center;justify-content:space-between;gap:10px}.editorTop h2{margin:0;font-size:clamp(20px,4vw,32px);letter-spacing:3px}.editorTop p{margin:3px 0 0;font-size:11px;letter-spacing:1px;color:#9d98b5}.editorTop button,.editorTools button,.editorQuick button,.editorActions button,.editorModeTabs button{min-height:42px;padding:7px 12px;border:1px solid #3b3158;background:#151024;color:#eef2ff;border-radius:7px;font:700 12px system-ui;letter-spacing:1px}.editorModeTabs,.editorTools,.editorQuick,.editorActions{display:flex;gap:6px;flex-wrap:wrap}.editorModeTabs button{flex:1;min-width:90px}.editorModeTabs .active,.editorTools .active{background:linear-gradient(120deg,#00e5ff,#8a4dff,#ff2e93);color:#05030a;border-color:#fff}.editorTools button{flex:1;min-width:74px}.editorQuick button{min-width:64px}.editorCanvasWrap{width:100%;overflow:hidden;border:1px solid #302743;border-radius:7px;background:#07050e;touch-action:none}#editorCanvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:none}.editorActions button{flex:1}.editorActions button:first-child{background:linear-gradient(120deg,#00e5ff,#8a4dff);color:#05030a}.levelName{min-width:220px;min-height:42px;padding:8px 12px;border:1px solid #3b3158;border-radius:7px;background:#0b0814;color:#eef2ff;font:700 13px system-ui;letter-spacing:1px;text-transform:uppercase;outline:none}.levelName:focus{border-color:#00e5ff;box-shadow:0 0 14px rgba(0,229,255,.25)}.editorModeTabs #editorMove,.editorModeTabs #editorCopy,.editorModeTabs #editorPaste{background:#0d0a17;border-color:#5a477c}.editorActions #publishLevel{background:linear-gradient(120deg,#ff2e93,#8a4dff,#00e5ff);color:#05030a;border-color:#fff}.officialLevels{width:min(600px,94vw);display:flex;flex-direction:column;gap:8px;max-height:26vh;overflow:auto}.officialLevel{min-width:0!important;width:100%;font-size:14px!important}.officialLevel span{float:right;opacity:.7;font-size:10px}
 @media(max-width:650px){.editorPanel{padding:7px;gap:6px}.editorTop p{display:none}.editorTools button,.editorQuick button,.editorModeTabs button{min-height:38px;font-size:10px;padding:5px 7px}.editorQuick button{min-width:50px}.editorActions button{min-height:44px}.levelName{width:100%;min-width:0}.editorTop{flex-wrap:wrap}.editorTop .levelName{order:3}.officialLevels{max-height:22vh}}
+
+
+/* ===== NEXUS SHOP ===== */
+#shopMenu{
+  background:
+    radial-gradient(circle at 50% 45%,rgba(138,77,255,.18),transparent 42%),
+    rgba(5,3,10,.96);
+}
+.shopRobot{
+  position:relative;
+  width:min(860px,92vw);
+  height:min(52vh,430px);
+  min-height:260px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border:2px solid rgba(0,229,255,.55);
+  border-radius:18px;
+  background:
+    linear-gradient(rgba(5,3,10,.16),rgba(5,3,10,.28)),
+    url("./assets/Gemini_Generated_Image_qe190zqe190zqe19.jpeg") center/cover no-repeat;
+  box-shadow:0 0 35px rgba(0,229,255,.2),0 0 70px rgba(138,77,255,.18);
+}
+.shopRobot:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,229,255,.08),transparent 35%,rgba(255,46,147,.08));
+}
+#shopRobotCanvas{
+  position:relative;
+  z-index:2;
+  width:min(260px,42vw);
+  height:auto;
+  filter:drop-shadow(0 0 18px rgba(0,229,255,.65));
+}
+.shopLine,.shopHint{position:relative;z-index:2}
+.nexusChat{position:relative;z-index:5;width:min(720px,92vw);max-height:42vh;display:flex;flex-direction:column;gap:10px}
+.nexusChat.hidden{display:none}
+.nexusMessages{max-height:25vh;overflow:auto;display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #3b3158;border-radius:10px;background:rgba(7,5,14,.9)}
+.nexusBubble{padding:9px 12px;border:1px solid #3b3158;border-radius:8px;background:#110d1f;color:var(--text);font:600 12px system-ui;text-align:left}
+.nexusUserBubble{border-color:var(--r1);background:#0b1720}
+.nexusInputRow{display:flex;gap:8px}
+.nexusInputRow input{flex:1;min-width:0;min-height:46px;padding:8px 12px;border:1px solid #3b3158;border-radius:8px;background:#0b0814;color:var(--text);font:600 13px system-ui;outline:none}
+.nexusInputRow input:focus{border-color:var(--r1);box-shadow:0 0 14px rgba(0,229,255,.2)}
+.nexusInputRow button{min-width:110px!important;min-height:46px!important;font-size:13px!important}
+@media(max-width:650px){
+  .shopRobot{width:94vw;height:40vh;min-height:220px}
+  #shopRobotCanvas{width:210px}
+  .shopLine,.shopHint{font-size:10px!important;letter-spacing:2px!important}
+  .nexusInputRow button{min-width:86px!important}
+}
