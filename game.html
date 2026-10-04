@@ -106,28 +106,25 @@
         menu.classList.remove("hidden");
         menu.style.display = "flex";
 
-        // Open the requested destination directly instead of simulating
-        // clicks. This keeps PLAY, LEVEL SELECT, CUSTOMIZE, and LEVEL MAKER
-        // independent and avoids timing/race-condition bugs.
-        requestAnimationFrame(() => {
-          if (start) {
-            const level = document.querySelector('.level[data-level="1"]');
-            if (level) level.click();
-          } else if (screen === "levels") {
-            const levelMenu = document.getElementById("levelMenu");
-            if (levelMenu && typeof showOverlay === "function") showOverlay(levelMenu);
-          } else if (screen === "customize") {
-            const customize = document.getElementById("customize");
-            if (customize) customize.click();
-          } else if (screen === "maker") {
-            const creator = document.getElementById("creator");
-            if (creator) creator.click();
-          }
-        });
+        // Route the main-menu destination directly. No delayed simulated
+        // clicks, so every URL from the Nexus landing page opens its screen.
+        if (start) {
+          const level = document.querySelector('.level[data-level="1"]');
+          if (level) level.click();
+        } else if (screen === "levels") {
+          const levelMenu = document.getElementById("levelMenu");
+          if (levelMenu && typeof showOverlay === "function") showOverlay(levelMenu);
+        } else if (screen === "customize") {
+          const customize = document.getElementById("customize");
+          if (customize) customize.click();
+        } else if (screen === "maker") {
+          const creator = document.getElementById("creator");
+          if (creator) creator.click();
+        }
       }
 
-      // Keep the old game page responsive without a fake loading delay.
-      const boot = () => setTimeout(showMainMenu, 120);
+      // Show the destination as soon as this page is ready; no artificial delay.
+      const boot = showMainMenu;
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", boot, {once: true});
       } else {
