@@ -235,12 +235,10 @@ function blockRect(b){
   return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
 }
 
-/* ===== Nexus block visual system ===== */
-const BLOCK_STYLES={core:{base:"#182536",edge:"#69e8ff",accent:"#00cfff",detail:"#27465d"},edge:{base:"#202033",edge:"#b6a6ff",accent:"#7d68ff",detail:"#3a335b"},energy:{base:"#102a2b",edge:"#72fff2",accent:"#00e6c3",detail:"#225b59"},reality:{base:"#24152e",edge:"#ff7bc5",accent:"#ff2e93",detail:"#5c244d"}};
-function blockRectFromFloor(b,floor){return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};}
-function blocksTouch(a,b,floor){const ra=blockRectFromFloor(a,floor),rb=blockRectFromFloor(b,floor),eps=2;const vo=Math.min(ra.y+ra.h,rb.y+rb.h)-Math.max(ra.y,rb.y);const ho=Math.min(ra.x+ra.w,rb.x+rb.w)-Math.max(ra.x,rb.x);return {left:Math.abs((rb.x+rb.w)-ra.x)<=eps&&vo>4,right:Math.abs((ra.x+ra.w)-rb.x)<=eps&&vo>4,top:Math.abs((rb.y+rb.h)-ra.y)<=eps&&ho>4,bottom:Math.abs((ra.y+ra.h)-rb.y)<=eps&&ho>4};}
-function getBlockConnections(block,list,floor){const c={left:false,right:false,top:false,bottom:false};for(const other of list){if(other===block)continue;const n=blocksTouch(block,other,floor);c.left||=n.left;c.right||=n.right;c.top||=n.top;c.bottom||=n.bottom;}return c;}
-function drawStyledBlock(target,b,list,floor,camera){const r=blockRectFromFloor(b,floor),x=r.x-camera;if(x+r.w<0||x>DESIGN_W)return;const s=BLOCK_STYLES[b.style]||BLOCK_STYLES.core,c=getBlockConnections(b,list,floor);const g=target.createLinearGradient(x,r.y,x,r.y+r.h);g.addColorStop(0,s.base);g.addColorStop(1,"#080d15");target.fillStyle=g;target.fillRect(x,r.y,r.w,r.h);const inset=Math.min(6,Math.max(3,Math.min(r.w,r.h)/8));target.fillStyle=s.detail;target.fillRect(x+inset,r.y+inset,Math.max(1,r.w-inset*2),Math.max(1,r.h-inset*2));target.strokeStyle=s.edge;target.lineWidth=2;target.beginPath();if(!c.top){target.moveTo(x+1,r.y+1);target.lineTo(x+r.w-1,r.y+1)}if(!c.right){target.moveTo(x+r.w-1,r.y+1);target.lineTo(x+r.w-1,r.y+r.h-1)}if(!c.bottom){target.moveTo(x+r.w-1,r.y+r.h-1);target.lineTo(x+1,r.y+r.h-1)}if(!c.left){target.moveTo(x+1,r.y+r.h-1);target.lineTo(x+1,r.y+1)}target.stroke();target.fillStyle=s.accent;const node=3;if(!c.top)target.fillRect(x+inset,r.y+inset,node,node);if(!c.right)target.fillRect(x+r.w-inset-node,r.y+inset,node,node);if(!c.bottom)target.fillRect(x+r.w-inset-node,r.y+r.h-inset-node,node,node);if(!c.left)target.fillRect(x+inset,r.y+r.h-inset-node,node,node);target.strokeStyle=s.accent;target.globalAlpha=.55;target.lineWidth=1.5;target.beginPath();target.moveTo(x+inset+7,r.y+r.h/2);target.lineTo(x+r.w-inset-7,r.y+r.h/2);target.stroke();target.globalAlpha=1;}
+function blockRect(b){
+  const floor=h-groundHeight;
+  return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+}
 function accurateBlockHit(b){
   const r=blockRect(b);
   const p=playerPolygon();
@@ -268,42 +266,58 @@ function loop(now){
 }
 function update(dt){
   if(dead)return;
-  const previousY=player.y;
-  const previousBottom=player.y+player.size;
+
   player.x+=speed*dt;
   player.vy+=gravity*dt;
   player.y+=player.vy*dt;
-  if(!player.onGround) player.rotation += (speed/player.size)*dt*Math.PI/2;
+
+  if(!player.onGround){
+    player.rotation+=(speed/player.size)*dt*Math.PI/2;
+  }
 
   const floor=h-groundHeight-player.size;
   if(player.y>=floor){
-    player.y=floor;player.vy=0;player.onGround=true;
+    player.y=floor;
+    player.vy=0;
+    player.onGround=true;
     player.rotation=Math.round(player.rotation/(Math.PI/2))*(Math.PI/2);
     if(holding)doJump();
-  }else player.onGround=false;
+  }else{
+    player.onGround=false;
+  }
 
   camera=Math.max(0,player.x-180);
   updateBestProgress();
   updateCreatorCompletion();
 
-  // Two explicit damage paths: spikes and blocks. Both built-in and creator objects
-  // use these same checks, so editor objects are real gameplay hazards.
-  const playerRight=player.x+player.size;
-  const playerBottom=player.y+player.size;
-  const baseY=h-groundHeight;
-
-  function damageFromSpikes(){
-    for(const s of spikes){
-      if(s.x>playerRight||s.x+s.w<player.x)continue;
-      if(baseY-s.h>playerBottom||baseY<player.y)continue;
-      if(accurateSpikeHit(s)){deathReason="spike";return true}
+  for(const s of spikes){
+    if(s.x>player.x+player.size||s.x+s.w<player.x)continue;
+    if(accurateSpikeHit(s)){
+      dead=true;
+      deathReason="spike";
+      return;
     }
-    return false;
   }
 
-  function solidBlocks(){
-    for(const b of blocks){drawStyledBlock(ctx,b,blocks,h-groundHeight,camera);}
+  for(const b of blocks){
+    if(accurateBlockHit(b)){
+      dead=true;
+      deathReason="block";
+      return;
+    }
+  }
+}
 
+function draw(){
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#000";
+  ctx.fillRect(0,0,w,h);
+
+  // Temporary neutral geometry. Final artwork will be added as assets later.
+  ctx.fillStyle="#fff";
+  ctx.fillRect(player.x-camera,player.y,player.size,player.size);
+
+  ctx.fillStyle="#fff";
   for(const s of spikes){
     const x=s.x-camera;
     if(x<-s.w||x>w)continue;
@@ -312,32 +326,30 @@ function update(dt){
     ctx.lineTo(x+s.w/2,h-groundHeight-s.h);
     ctx.lineTo(x+s.w,h-groundHeight);
     ctx.closePath();
-    ctx.fillStyle="#e94b5f";ctx.fill();
+    ctx.fill();
   }
 
-  drawNexusAI();
-
-  const px=player.x-camera;
-  ctx.save();
-  ctx.translate(px+player.size/2,player.y+player.size/2);
-  ctx.rotate(player.rotation);
-  if(paintHasAny()){
-    ctx.save();ctx.translate(-player.size/2,-player.size/2);drawPaintedCharacter(ctx,player.size);ctx.restore();
-  }else{
-    ctx.fillStyle=characterColor;
-    ctx.fillRect(-player.size/2,-player.size/2,player.size,player.size);
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=1;
+  for(const b of blocks){
+    const r=blockRect(b);
+    const x=r.x-camera;
+    if(x+r.w<0||x>w)continue;
+    ctx.strokeRect(x,r.y,r.w,r.h);
   }
-  ctx.strokeStyle="#b8f2ff";ctx.lineWidth=3;
-  ctx.strokeRect(-player.size/2+1.5,-player.size/2+1.5,player.size-3,player.size-3);
-  ctx.restore();
 
   if(dead){
-    ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,0,w,h);
-    ctx.fillStyle="#fff";ctx.textAlign="center";
-    ctx.font="bold 30px system-ui";ctx.fillText(deathReason==="block"?"You hit a block!":"You hit a spike!",w/2,h/2-10);
-    ctx.font="18px system-ui";ctx.fillText("Tap or press Space to restart",w/2,h/2+28);
+    ctx.fillStyle="rgba(0,0,0,.65)";
+    ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="#fff";
+    ctx.textAlign="center";
+    ctx.font="bold 30px system-ui";
+    ctx.fillText(deathReason==="block"?"You hit a block!":"You hit a spike!",w/2,h/2-10);
+    ctx.font="18px system-ui";
+    ctx.fillText("Tap or press Space to restart",w/2,h/2+28);
   }
 }
+
 loadCharacterColor();
 loadCharacterPaint();
 loadCharacterMode();
@@ -700,6 +712,9 @@ function moveSelectedEditor(e){
   drawEditor();
 }
 function finishEditorDrag(){editorDragging=false}
+function blockRectFromEditor(b,floor){
+  return {x:b.x,y:floor-b.h-b.y,w:b.w,h:b.h};
+}
 function drawEditor(){
   const size=editorSize();
   const scale=size.width/DESIGN_W;
@@ -720,7 +735,12 @@ function drawEditor(){
   ectx.strokeStyle="#4dd7ff";ectx.lineWidth=3;
   ectx.beginPath();ectx.moveTo(0,DESIGN_H-groundHeight);ectx.lineTo(DESIGN_W,DESIGN_H-groundHeight);ectx.stroke();
   const floor=DESIGN_H-groundHeight;
-  for(const b of editorObjects.blocks){drawStyledBlock(ectx,b,editorObjects.blocks,floor,editorCamera);}
+  for(const b of editorObjects.blocks){
+    const r=blockRectFromEditor(b,floor);
+    ectx.strokeStyle="#fff";
+    ectx.lineWidth=1;
+    ectx.strokeRect(r.x-editorCamera,r.y,r.w,r.h);
+  }
   for(const s of editorObjects.spikes){
     const x=s.x-editorCamera;
     if(x<-s.w||x>DESIGN_W)continue;
