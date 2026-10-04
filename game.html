@@ -92,10 +92,48 @@
 
   <script src="game.js"></script>
   <script>
-    (()=>{const loading=document.getElementById("loading"),menu=document.getElementById("menu");
-      function showMainMenu(){loading.classList.add("hidden");menu.classList.remove("hidden");loading.style.display="none";menu.style.display="flex"}
-      const boot=()=>setTimeout(showMainMenu,700);
-      if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
+    (() => {
+      const loading = document.getElementById("loading");
+      const menu = document.getElementById("menu");
+      const params = new URLSearchParams(location.search);
+      const screen = params.get("screen");
+      const start = params.get("start") === "1");
+
+      function showMainMenu() {
+        loading.classList.add("hidden");
+        loading.style.display = "none";
+        menu.classList.remove("hidden");
+        menu.style.display = "flex";
+
+        setTimeout(() => {
+          if (start) {
+            const play = document.getElementById("play");
+            if (play) {
+              play.click();
+              setTimeout(() => {
+                const level = document.querySelector('.level[data-level="1"]');
+                if (level) level.click();
+              }, 50);
+            }
+          } else if (screen === "levels") {
+            const play = document.getElementById("play");
+            if (play) play.click();
+          } else if (screen === "customize") {
+            const customize = document.getElementById("customize");
+            if (customize) customize.click();
+          } else if (screen === "maker") {
+            const creator = document.getElementById("creator");
+            if (creator) creator.click();
+          }
+        }, 50);
+      }
+
+      const boot = () => setTimeout(showMainMenu, 700);
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot, {once: true});
+      } else {
+        boot();
+      }
     })();
   </script>
 </body>
