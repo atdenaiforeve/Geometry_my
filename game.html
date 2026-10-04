@@ -27,7 +27,18 @@
       <canvas id="shopRobotCanvas" width="260" height="300"></canvas>
     </div>
     <p class="shopLine">NEXUS AI IS WAITING.</p>
-    <p class="shopHint">THE SHOP WILL EXPAND WITH MORE ITEMS.</p>
+    <p class="shopHint">CLICK NEXUS TO TALK.</p>
+
+    <div id="nexusChat" class="nexusChat hidden" aria-live="polite">
+      <div id="nexusMessages" class="nexusMessages">
+        <div class="nexusBubble">NEXUS: Hello. What are you looking for?</div>
+      </div>
+      <div class="nexusInputRow">
+        <input id="nexusInput" type="text" maxlength="180" autocomplete="off" placeholder="TYPE TO NEXUS..." aria-label="Message Nexus AI">
+        <button id="nexusSend" type="button">SEND</button>
+      </div>
+    </div>
+
     <button id="shopBack" type="button">BACK</button>
   </div>
 
@@ -110,6 +121,10 @@
   const shopBack = document.getElementById("shopBack");
   const canvas = document.getElementById("shopRobotCanvas");
   const ctx = canvas && canvas.getContext("2d");
+  const nexusChat = document.getElementById("nexusChat");
+  const nexusInput = document.getElementById("nexusInput");
+  const nexusSend = document.getElementById("nexusSend");
+  const nexusMessages = document.getElementById("nexusMessages");
 
   function drawShopRobot(){
     if(!ctx)return;
@@ -156,12 +171,59 @@
     ctx.restore();
   }
 
+  function openNexusChat(){
+    if(!nexusChat)return;
+    nexusChat.classList.remove("hidden");
+    if(nexusInput){
+      nexusInput.focus();
+      nexusInput.select();
+    }
+  }
+
+  function addNexusMessage(label, message, mine=false){
+    if(!nexusMessages)return;
+    const bubble=document.createElement("div");
+    bubble.className="nexusBubble" + (mine ? " nexusUserBubble" : "");
+    bubble.textContent=label + ": " + message;
+    nexusMessages.appendChild(bubble);
+    nexusMessages.scrollTop=nexusMessages.scrollHeight;
+  }
+
+  function sendNexusMessage(){
+    const message=(nexusInput?.value || "").trim();
+    if(!message)return;
+    addNexusMessage("YOU",message,true);
+    nexusInput.value="";
+    // Local shopkeeper response for now. This can be replaced by the real AI
+    // backend later without changing the chat UI.
+    const lower=message.toLowerCase();
+    let reply="Interesting. I'm still learning this shop.";
+    if(lower.includes("hello") || lower.includes("hi")) reply="Hello. Welcome to the Nexus Shop.";
+    else if(lower.includes("shop") || lower.includes("item")) reply="More Nexus items are being prepared.";
+    else if(lower.includes("who") || lower.includes("name")) reply="I am Nexus AI. I watch the merge.";
+    else if(lower.includes("bye")) reply="Connection closed. I'll be here.";
+    setTimeout(()=>addNexusMessage("NEXUS",reply),180);
+  }
+
+  if(canvas){
+    canvas.addEventListener("click",openNexusChat);
+    canvas.addEventListener("pointerdown",openNexusChat);
+  }
+
+  if(nexusSend) nexusSend.addEventListener("click",sendNexusMessage);
+  if(nexusInput){
+    nexusInput.addEventListener("keydown",(event)=>{
+      if(event.key==="Enter")sendNexusMessage();
+    });
+  }
+
   if(shop){
     shop.addEventListener("click",()=>{
       playing=false;
       hideOverlay(document.getElementById("menu"));
       showOverlay(shopMenu);
       drawShopRobot();
+      if(nexusChat)nexusChat.classList.add("hidden");
     });
   }
   if(shopBack){
