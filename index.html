@@ -283,6 +283,21 @@
     body.rift-transition #rift-transition {
       opacity: 1;
     }
+    body.rift-transition-customize #nexus-scene {
+      transform-origin: 13% 46%;
+      transform: scale(13);
+      filter: brightness(1.25) saturate(1.25);
+    }
+    body.rift-transition-customize .menu {
+      opacity: 0;
+      transition: opacity 0.32s ease;
+    }
+    body.rift-transition-customize #rift-transition {
+      opacity: 1;
+      background:
+        radial-gradient(circle at 13% 46%, rgba(255,120,210,0.2) 0 2%, rgba(125,255,240,0.08) 7%, transparent 18%),
+        radial-gradient(circle at 13% 46%, transparent 0 9%, rgba(191,168,255,0.15) 10%, transparent 18%);
+    }
     @media (prefers-reduced-motion: reduce) {
       #nexus-scene { transition: none; }
       body.rift-transition #nexus-scene { transform: scale(1); }
@@ -363,7 +378,36 @@
       window.location.assign(new URL('game.html?screen=levels', window.location.href).href);
     },
     customize() {
-      window.location.assign(new URL('game.html?screen=customize', window.location.href).href);
+      const target = new URL('game.html?screen=customize', window.location.href).href;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let finished = false;
+
+      const finish = (skip = false) => {
+        if (finished) return;
+        finished = true;
+        window.removeEventListener('keydown', skipHandler);
+        window.removeEventListener('pointerdown', skipHandler);
+        window.removeEventListener('touchstart', skipHandler);
+        if (skip || reduced) {
+          window.location.assign(target);
+          return;
+        }
+        document.body.classList.add('rift-transition-customize');
+        setTimeout(() => window.location.assign(target), 1050);
+      };
+
+      const skipHandler = (e) => {
+        if (e.type === 'keydown' && ![' ', 'Enter', 'Escape'].includes(e.key)) return;
+        e.preventDefault();
+        finish(true);
+      };
+
+      // Customize uses a different rift on the left side of the Nexus scene.
+      window.addEventListener('keydown', skipHandler);
+      window.addEventListener('pointerdown', skipHandler);
+      window.addEventListener('touchstart', skipHandler, { passive: false });
+      document.body.classList.add('rift-transition-customize');
+      setTimeout(() => finish(false), 1050);
     },
     'level-maker'() {
       window.location.assign(new URL('game.html?screen=maker', window.location.href).href);
