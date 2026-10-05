@@ -379,8 +379,8 @@ html, body {
   padding: 1rem 1.6rem;
   border: 0;
   cursor: pointer;
-  background: var(--c);
-  color: #f4feff;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c) 82%, white), var(--c) 55%, color-mix(in srgb, var(--c) 65%, black));
+  color: #ffffff;
   font: 700 clamp(.85rem, 1.6vw, 1.1rem)/1 'Orbitron', system-ui, sans-serif;
   letter-spacing: .18em;
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
@@ -389,12 +389,12 @@ html, body {
 .btn::before {              /* dark fill leaves a 2px neon border */
   content: '';
   position: absolute; inset: 2px;
-  background: linear-gradient(180deg, rgba(8,14,36,.92), rgba(5,8,22,.96));
+  background: rgba(5,8,22,.18);
   clip-path: polygon(calc(var(--cut) - 1px) 0, 100% 0, calc(100% - var(--cut) + 1px) 100%, 0 100%);
   transition: background .2s;
 }
 .btn:hover::before, .btn:focus-visible::before {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 55%, #05081a), color-mix(in srgb, var(--c) 25%, #05081a));
+  background: rgba(255,255,255,.12);
 }
 
 .label { position: relative; z-index: 1; display: inline-block; }
