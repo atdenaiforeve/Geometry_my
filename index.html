@@ -190,13 +190,6 @@ html, body {
   filter: hue-rotate(40deg) saturate(1.6) drop-shadow(4px 0 0 rgba(255,47,214,.7)) drop-shadow(-4px 0 0 rgba(47,243,255,.7));
   transform: translateX(var(--shift, 4px)) skewX(-1deg);
 }
-#stage.warping .flash { animation: warpFlash .65s ease-in forwards; }
-@keyframes warpFlash {
-  0%   { opacity: 0; }
-  70%  { opacity: .85; }
-  100% { opacity: 1; }
-}
-
 /* ---------- Title ---------- */
 
 .title {
@@ -385,7 +378,6 @@ html, body {
 
     <div class="vignette" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
-    <div class="flash" aria-hidden="true"></div>
 
     <h1 id="title" class="title" data-text="INTO THE NEXUS">INTO THE NEXUS</h1>
 
@@ -446,8 +438,7 @@ html, body {
 
   let W = 0, H = 0, dpr = 1, cx = 0, cy = 0;
   let debris = [], pixels = [], bolts = [];
-  let warp = 0, warpTarget = 0;
-  let glitchUntil = 0;
+    let glitchUntil = 0;
   let busy = false;
 
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -494,9 +485,8 @@ html, body {
     for (const d of debris) {
       d.ang += d.orbit * dt;
       d.rot += d.spin * dt;
-      const pull = 1 - warp * 0.9;                  // debris gets sucked in when warping
-      const x = cx + Math.cos(d.ang) * d.dist * 1.5 * pull;
-      const y = cy + Math.sin(d.ang) * d.dist * 0.8 * pull + Math.sin(t + d.bob) * 6;
+      const x = cx + Math.cos(d.ang) * d.dist * 1.5;
+      const y = cy + Math.sin(d.ang) * d.dist * 0.8 + Math.sin(t + d.bob) * 6;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(d.rot);
@@ -565,7 +555,7 @@ html, body {
   /* ---------- 5. Vortex ---------- */
   function drawVortex(t) {
     const base = Math.min(W, H) * 0.12;
-    const R = base * (1 + warp * 7) * (1 + 0.04 * Math.sin(t * 2.2));
+    const R = base * (1 + 0.04 * Math.sin(t * 2.2));
     ctx.save();
     ctx.translate(cx, cy);
 
@@ -673,8 +663,6 @@ html, body {
     last = now;
     const t = now / 1000;
 
-    warp += (warpTarget - warp) * Math.min(1, dt * 6);
-
     ctx.clearRect(0, 0, W, H);
     drawPixels(dt);
     drawDebris(t, dt);
@@ -692,10 +680,7 @@ html, body {
   function go(action) {
     if (busy) return;
     busy = true;
-    stage.classList.add('warping');
-    warpTarget = 1;
-    glitchBurst();
-    setTimeout(() => ACTIONS[action]?.(), 650);
+    ACTIONS[action]?.();
   }
 
   const buttons = Array.from(document.querySelectorAll('.btn'));
