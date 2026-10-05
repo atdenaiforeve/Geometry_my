@@ -107,8 +107,6 @@ function saveProgress(){
   try{localStorage.setItem(SAVE_KEY,JSON.stringify(progress));}catch(e){}
 }
 function updateBestProgress(){
-  const endX=3000;
-  if(editorMode===false && creatorTestMode) updateCreatorCompletion();
   const progressEndX=creatorTestMode?creatorTestEndX:3000;
   const percent=Math.max(0,Math.min(100,Math.round(((player.x-levelStartX)/(progressEndX-levelStartX))*100)));
   if(percent>progress.best){
@@ -176,6 +174,17 @@ function doJump(){
   if(player.onGround){player.vy=jump;player.onGround=false}
 }
 addEventListener("keydown",e=>{
+  if(e.code==="Escape" && creatorTestMode){
+    creatorTestMode=false;
+    creatorTestBeat=false;
+    playing=false;
+    openEditor();
+    return;
+  }
+  if(e.code==="Escape" && creatorTestBeat){
+    openEditor();
+    return;
+  }
   if(e.code==="Space"||e.code==="ArrowUp"||e.code==="KeyW"){
     e.preventDefault();    holding=true;
     doJump();
@@ -186,7 +195,12 @@ addEventListener("keyup",e=>{
 });
 canvas.addEventListener("pointerdown",e=>{
   if(editorMode){return;}
-  e.preventDefault();holding=true;doJump();
+  e.preventDefault();
+  if(creatorTestBeat){
+    openEditor();
+    return;
+  }
+  holding=true;doJump();
 });
 addEventListener("pointerup",()=>holding=false);
 addEventListener("pointercancel",()=>holding=false);
@@ -208,7 +222,7 @@ function polygonsOverlap(a,b){
       const len=Math.hypot(axis.x,axis.y);
       axis.x/=len;axis.y/=len;
       const pa=project(a,axis),pb=project(b,axis);
-      if(pa.max<pb.min||pb.max<pa.min)return false;
+      if(pa.max<=pb.min||pb.max<=pa.min)return false;
     }
   }
   return true;
@@ -313,9 +327,21 @@ function draw(){
   ctx.fillStyle="#000";
   ctx.fillRect(0,0,w,h);
 
-  // Temporary neutral geometry. Final artwork will be added as assets later.
-  ctx.fillStyle="#fff";
-  ctx.fillRect(player.x-camera,player.y,player.size,player.size);
+  // Draw the customized cube with the same reactive rotation used by gameplay.
+  ctx.save();
+  ctx.translate(player.x-camera+player.size/2,player.y+player.size/2);
+  ctx.rotate(player.rotation);
+  ctx.translate(-player.size/2,-player.size/2);
+  if(paintHasAny()){
+    drawPaintedCharacter(ctx,player.size);
+  }else{
+    ctx.fillStyle=characterColor;
+    ctx.fillRect(0,0,player.size,player.size);
+  }
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=2;
+  ctx.strokeRect(1,1,player.size-2,player.size-2);
+  ctx.restore();
 
   ctx.fillStyle="#fff";
   for(const s of spikes){
@@ -594,15 +620,6 @@ function resizeEditor(){
 function editorSize(){
   const rect=editorCanvas.getBoundingClientRect();  return {width:rect.width,height:rect.width*DESIGN_H/DESIGN_W};
 }
-function editorPoint(e){
-  const rect=editorCanvas.getBoundingClientRect();
-  const scaleX=DESIGN_W/rect.width;
-  const scaleY=DESIGN_H/(rect.width*DESIGN_H/DESIGN_W);
-  return {
-    x:(e.clientX-rect.left)*scaleX+editorCamera,
-    y:(e.clientY-rect.top)*scaleY
-  };
-}
 function snap(n){return Math.round(n/20)*20}
 function editorSnapshot(){return JSON.stringify(editorObjects)}
 function restoreEditorSnapshot(s){
@@ -726,12 +743,14 @@ function drawEditor(){
   ectx.scale(editorZoom,editorZoom);
   ectx.translate(-editorCamera/editorZoom,0);
   ectx.fillStyle="#252b38";ectx.fillRect(0,DESIGN_H-groundHeight,DESIGN_W,groundHeight);
-  ectx.strokeStyle="#303b4d";ectx.lineWidth=1;
-  for(let x=Math.floor(editorCamera/20)*20;x<editorCamera+DESIGN_W+20;x+=20){
-    ectx.beginPath();ectx.moveTo(x-editorCamera,0);ectx.lineTo(x-editorCamera,DESIGN_H);ectx.stroke();
-  }
-  for(let y=0;y<DESIGN_H;y+=20){
-    ectx.beginPath();ectx.moveTo(0,y);ectx.lineTo(DESIGN_W,y);ectx.stroke();
+  if(editorGridOn){
+    ectx.strokeStyle="#303b4d";ectx.lineWidth=1;
+    for(let x=Math.floor(editorCamera/20)*20;x<editorCamera+DESIGN_W+20;x+=20){
+      ectx.beginPath();ectx.moveTo(x-editorCamera,0);ectx.lineTo(x-editorCamera,DESIGN_H);ectx.stroke();
+    }
+    for(let y=0;y<DESIGN_H;y+=20){
+      ectx.beginPath();ectx.moveTo(0,y);ectx.lineTo(DESIGN_W,y);ectx.stroke();
+    }
   }
   ectx.strokeStyle="#4dd7ff";ectx.lineWidth=3;
   ectx.beginPath();ectx.moveTo(0,DESIGN_H-groundHeight);ectx.lineTo(DESIGN_W,DESIGN_H-groundHeight);ectx.stroke();
@@ -770,12 +789,18 @@ function drawEditor(){
   ectx.fillText("X: "+Math.round(editorCamera)+"  "+editorModeTab.toUpperCase()+"  "+editorTool.toUpperCase(),12,24);
 }
 function saveCreatorLevel(){
-  localStorage.setItem(CREATOR_SAVE_KEY,JSON.stringify(editorObjects));
-  editorLevelLoaded=true;
-  document.getElementById("editorStatus").textContent="LEVEL SAVED · "+editorObjects.blocks.length+" blocks · "+editorObjects.spikes.length+" spikes";
+  try{
+    localStorage.setItem(CREATOR_SAVE_KEY,JSON.stringify(editorObjects));
+    editorLevelLoaded=true;
+    document.getElementById("editorStatus").textContent="LEVEL SAVED · "+editorObjects.blocks.length+" blocks · "+editorObjects.spikes.length+" spikes";
+  }catch(e){
+    document.getElementById("editorStatus").textContent="SAVE FAILED · BROWSER STORAGE IS UNAVAILABLE";
+  }
 }
 function clearCreatorLevel(){
+  pushEditorHistory();
   editorObjects={blocks:[],spikes:[]};
+  editorSelected=null;
   drawEditor();
   document.getElementById("editorStatus").textContent="EMPTY LEVEL · choose a tool and place objects";
 }
@@ -813,3 +838,133 @@ function pasteEditorObject(){
   if(!editorClipboard){document.getElementById("editorStatus").textContent="PASTE · nothing copied yet";return;}
   pushEditorHistory();
   const d={...editorClipboard.data,x:editorClipboard.data.x+40};
+  if(editorClipboard.type==="spike"){
+    editorObjects.spikes.push(d);
+    editorSelected={type:"spike",index:editorObjects.spikes.length-1};
+  }else{
+    editorObjects.blocks.push(d);
+    editorSelected={type:"block",index:editorObjects.blocks.length-1};
+  }
+  editorModeTab="edit";
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="edit"));
+  document.getElementById("editorStatus").textContent="PASTED · drag the copy into place";
+  drawEditor();
+}
+function moveTool(){
+  editorModeTab="edit";
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="edit"));
+  document.getElementById("editorStatus").textContent="MOVE · tap a block, then drag it";
+}
+function loadOfficialLevels(){
+  try{
+    const data=JSON.parse(localStorage.getItem(OFFICIAL_LEVELS_KEY)||"[]");
+    return Array.isArray(data)?data.filter(x=>x&&Array.isArray(x.blocks)&&Array.isArray(x.spikes)):[];
+  }catch(e){return []}
+}
+function saveOfficialLevel(){
+  if(!creatorTestBeat){
+    document.getElementById("editorStatus").textContent="PUBLISH LOCKED · BEAT YOUR LEVEL IN TEST MODE FIRST";
+    return;
+  }
+  const name=(document.getElementById("levelName")?.value||"NEXUS CREATION").trim().slice(0,28)||"NEXUS CREATION";
+  const blocksCopy=editorObjects.blocks.map(o=>({...o}));
+  const spikesCopy=editorObjects.spikes.map(o=>({...o}));
+  if(!blocksCopy.length&&!spikesCopy.length){
+    document.getElementById("editorStatus").textContent="PUBLISH FAILED · ADD SOME OBJECTS FIRST";
+    return;
+  }
+  const levels=loadOfficialLevels();
+  const id=Date.now();
+  levels.push({id,name,blocks:blocksCopy,spikes:spikesCopy,publishedAt:new Date().toISOString()});
+  localStorage.setItem(OFFICIAL_LEVELS_KEY,JSON.stringify(levels));
+  localStorage.setItem(CREATOR_SAVE_KEY,JSON.stringify(editorObjects));
+  refreshOfficialLevelMenu();
+  document.getElementById("editorStatus").textContent="✓ OFFICIAL LEVEL PUBLISHED · "+name;
+}
+function playOfficialLevel(id){
+  const level=loadOfficialLevels().find(x=>String(x.id)===String(id));
+  if(!level)return;
+  blocks=level.blocks.map(o=>({...o}));
+  spikes=level.spikes.map(o=>({...o}));
+  startGame();
+}
+function refreshOfficialLevelMenu(){
+  const container=document.getElementById("officialLevels");
+  if(!container)return;
+  container.innerHTML="";
+  for(const level of loadOfficialLevels()){
+    const button=document.createElement("button");
+    button.className="level officialLevel";button.type="button";button.dataset.officialId=level.id;
+    button.innerHTML="OFFICIAL · "+escapeHtml(level.name)+' <span>CREATOR LEVEL</span>';
+    button.addEventListener("click",()=>playOfficialLevel(level.id));
+    container.appendChild(button);
+  }
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
+function setEditorTool(tool){
+  editorTool=tool;
+  document.querySelectorAll(".editorTools .tool").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
+  document.getElementById("editorStatus").textContent=tool.toUpperCase()+" selected · tap the grid to place";
+}
+
+document.getElementById("creator").addEventListener("click",enterCreator);
+document.getElementById("editorMove").addEventListener("click",moveTool);
+document.getElementById("editorCopy").addEventListener("click",copyEditorObject);
+document.getElementById("editorPaste").addEventListener("click",pasteEditorObject);
+document.getElementById("publishLevel").addEventListener("click",saveOfficialLevel);
+refreshOfficialLevelMenu();
+document.getElementById("unlockCreator").addEventListener("click",unlockCreator);
+document.getElementById("cancelCreator").addEventListener("click",()=>{
+  hideOverlay(passwordMenu);showOverlay(document.getElementById("menu"));
+});
+creatorPassword.addEventListener("keydown",e=>{if(e.key==="Enter")unlockCreator()});
+document.getElementById("closeEditor").addEventListener("click",closeEditor);
+document.querySelectorAll(".editorTools .tool").forEach(b=>b.addEventListener("click",()=>{
+  setEditorTool(b.dataset.tool);
+  editorModeTab="build";
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x.dataset.mode==="build"));
+}));
+document.querySelectorAll(".modeTab").forEach(b=>b.addEventListener("click",()=>{
+  editorModeTab=b.dataset.mode;
+  document.querySelectorAll(".modeTab").forEach(x=>x.classList.toggle("active",x===b));
+  document.getElementById("editorStatus").textContent=editorModeTab==="build"?"BUILD · choose an object, then tap the grid":editorModeTab==="edit"?"EDIT · tap an object to select and drag it":"DELETE · tap an object to remove it";
+}));
+document.getElementById("editorUndo").addEventListener("click",undoEditor);
+document.getElementById("editorRedo").addEventListener("click",redoEditor);
+document.getElementById("editorGrid").addEventListener("click",e=>{
+  editorGridOn=!editorGridOn;e.target.textContent="GRID: "+(editorGridOn?"ON":"OFF");drawEditor();
+});
+document.getElementById("editorSnap").addEventListener("click",e=>{
+  editorSnapOn=!editorSnapOn;e.target.textContent="SNAP: "+(editorSnapOn?"ON":"OFF");
+});
+document.getElementById("editorZoomOut").addEventListener("click",()=>{editorZoom=Math.max(.65,editorZoom-.15);drawEditor()});
+document.getElementById("editorZoomIn").addEventListener("click",()=>{editorZoom=Math.min(1.8,editorZoom+.15);drawEditor()});
+document.getElementById("editorLeft").addEventListener("click",()=>{editorCamera=Math.max(0,editorCamera-100);drawEditor()});
+document.getElementById("editorRight").addEventListener("click",()=>{editorCamera=Math.min(19000,editorCamera+100);drawEditor()});
+document.getElementById("saveLevel").addEventListener("click",saveCreatorLevel);
+document.getElementById("testLevel").addEventListener("click",testCreatorLevel);
+document.getElementById("clearLevel").addEventListener("click",clearCreatorLevel);
+editorCanvas.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  editorLastPointer=editorWorldPoint(e);
+  placeEditorObject(e);
+  editorCanvas.setPointerCapture?.(e.pointerId);
+});
+editorCanvas.addEventListener("pointermove",e=>{if(editorModeTab==="edit"&&editorDragging){e.preventDefault();moveSelectedEditor(e)}});
+editorCanvas.addEventListener("pointerup",finishEditorDrag);
+editorCanvas.addEventListener("pointercancel",finishEditorDrag);
+addEventListener("resize",()=>{if(editorMode){resizeEditor();drawEditor()}});
+
+// Keep the normal level select working with the current saved creator level.
+document.querySelector('.level[data-level="1"]').addEventListener("click",()=>{
+  const saved=localStorage.getItem(CREATOR_SAVE_KEY);
+  if(saved){
+    try{
+      const data=JSON.parse(saved);
+      if(Array.isArray(data.blocks)&&Array.isArray(data.spikes)){
+        blocks=data.blocks.filter(validBlock).map(o=>({...o}));
+        spikes=data.spikes.filter(validSpike).map(o=>({...o}));
+      }
+    }catch(e){}
+  }
+});
