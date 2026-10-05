@@ -439,9 +439,7 @@ html, body {
   let W = 0, H = 0, dpr = 1, cx = 0, cy = 0;
   let debris = [], pixels = [], bolts = [];
     let glitchUntil = 0;
-  let busy = false;
-
-  const rand = (a, b) => a + Math.random() * (b - a);
+const rand = (a, b) => a + Math.random() * (b - a);
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -678,8 +676,6 @@ html, body {
 
   /* ---------- Menu interaction ---------- */
   function go(action) {
-    if (busy) return;
-    busy = true;
     ACTIONS[action]?.();
   }
 
