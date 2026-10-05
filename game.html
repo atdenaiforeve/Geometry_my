@@ -126,6 +126,7 @@
 
   const SHOP_BG="assets/Gemini_Generated_Image_qe190zqe190zqe19.jpeg";
   const ROBOT_IMAGE="assets/Gemini_Generated_Image_beqmwkbeqmwkbeqm.jpeg";
+
   const shopBackgroundImage=new Image();
   shopBackgroundImage.decoding="async";
   shopBackgroundImage.src=SHOP_BG;
@@ -134,38 +135,54 @@
   robotImage.decoding="async";
   robotImage.src=ROBOT_IMAGE;
 
+  let shopAssetsReady=false;
+  let shopAssetPromise=null;
+
+  function loadShopAsset(image){
+    if(image.complete && image.naturalWidth) return Promise.resolve(image);
+    if(image.complete && !image.naturalWidth) return Promise.reject(new Error("Shop image failed to load."));
+    return new Promise((resolve,reject)=>{
+      image.addEventListener("load",()=>resolve(image),{once:true});
+      image.addEventListener("error",()=>reject(new Error("Shop image failed to load.")),{once:true});
+    });
+  }
+
   function prepareShopAssets(){
-    if(shopMenu){
-      shopMenu.style.backgroundImage =
-        'radial-gradient(circle at 50% 45%,rgba(138,77,255,.18),transparent 42%),url("' +
-        new URL(SHOP_BG, location.href).href +
-        '")';
+    if(!shopAssetPromise){
+      shopAssetPromise=Promise.all([
+        loadShopAsset(shopBackgroundImage),
+        loadShopAsset(robotImage)
+      ]).then(()=>{
+        shopAssetsReady=true;
+        if(shopMenu){
+          shopMenu.style.backgroundImage =
+            'radial-gradient(circle at 50% 45%,rgba(138,77,255,.18),transparent 42%),url("' +
+            new URL(SHOP_BG, location.href).href +
+            '")';
+        }
+        return true;
+      }).catch(error=>{
+        shopAssetsReady=false;
+        shopAssetPromise=null;
+        console.error("Nexus Shop asset loading failed:",error);
+        return false;
+      });
     }
+    return shopAssetPromise;
   }
 
   function drawShopRobot(){
-    if(!ctx)return;
+    if(!ctx || !shopAssetsReady)return;
     ctx.clearRect(0,0,260,300);
-
-    const draw=()=>{
-      if(!robotImage.naturalWidth)return;
-      ctx.clearRect(0,0,260,300);
-      ctx.save();
-      ctx.globalAlpha=.18;
-      ctx.fillStyle="#00e5ff";
-      ctx.beginPath();ctx.arc(130,150,105,0,Math.PI*2);ctx.fill();
-      ctx.globalAlpha=1;
-      const scale=Math.min(230/robotImage.naturalWidth,260/robotImage.naturalHeight);
-      const w=robotImage.naturalWidth*scale,h=robotImage.naturalHeight*scale;
-      ctx.drawImage(robotImage,130-w/2,150-h/2,w,h);
-      ctx.restore();
-    };
-
-    if(robotImage.complete && robotImage.naturalWidth){
-      draw();
-    }else{
-      robotImage.onload=draw;
-    }
+    ctx.save();
+    ctx.globalAlpha=.18;
+    ctx.fillStyle="#00e5ff";
+    ctx.beginPath();ctx.arc(130,150,105,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+    const scale=Math.min(230/robotImage.naturalWidth,260/robotImage.naturalHeight);
+    const w=robotImage.naturalWidth*scale,h=robotImage.naturalHeight*scale;
+    ctx.drawImage(robotImage,130-w/2,150-h/2,w,h);
+    ctx.restore();
   }
 
   function openNexusChat(){
@@ -228,38 +245,46 @@
   }
 
   if(shop){
-    shop.addEventListener("click",()=>{
+    shop.addEventListener("click",async()=>{
       playing=false;
+
+      // Do not reveal the shop until both the background and robot are ready.
+      const ready=await prepareShopAssets();
+      if(!ready){
+        console.error("Nexus Shop is unavailable because its artwork did not load.");
+        return;
+      }
+
       hideOverlay(document.getElementById("menu"));
-      prepareShopAssets();
       showOverlay(shopMenu);
       drawShopRobot();
       if(nexusChat)nexusChat.classList.add("hidden");
     });
   }
+
   if(shopBack){
     shopBack.addEventListener("click",()=>{
       hideOverlay(shopMenu);
       showOverlay(document.getElementById("menu"));
     });
   }
+
+  // Start loading the shop artwork immediately, without opening the shop early.
+  prepareShopAssets();
 })();
 </script>
 
   <script>
     (() => {
-      const loading = document.getElementById("loading");
       const menu = document.getElementById("menu");
       const params = new URLSearchParams(location.search);
       const screen = params.get("screen");
-      const start = params.get("start") === "1");
+      const start = params.get("start") === "1";
 
       function showMainMenu() {
         menu.classList.remove("hidden");
         menu.style.display = "flex";
 
-        // Route the main-menu destination directly. No delayed simulated
-        // clicks, so every URL from the Nexus landing page opens its screen.
         if (start || screen === "levels") {
           const levelMenu = document.getElementById("levelMenu");
           if (levelMenu && typeof showOverlay === "function") showOverlay(levelMenu);
@@ -275,8 +300,6 @@
         }
       }
 
-      // Show the usable menu immediately. There is no artificial loading delay.
-      prepareShopAssets();
       showMainMenu();
     })();
   </script>
