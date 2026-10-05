@@ -149,23 +149,22 @@
 
   function prepareShopAssets(){
     if(!shopAssetPromise){
-      shopAssetPromise=Promise.all([
+      shopAssetPromise=Promise.allSettled([
         loadShopAsset(shopBackgroundImage),
         loadShopAsset(robotImage)
-      ]).then(()=>{
-        shopAssetsReady=true;
-        if(shopMenu){
+      ]).then(results=>{
+        const bgOk=results[0].status==="fulfilled";
+        const robotOk=results[1].status==="fulfilled";
+        shopAssetsReady=robotOk;
+        if(shopMenu && bgOk){
           shopMenu.style.backgroundImage =
             'radial-gradient(circle at 50% 45%,rgba(138,77,255,.18),transparent 42%),url("' +
             new URL(SHOP_BG, location.href).href +
             '")';
         }
+        if(!bgOk) console.error("Nexus Shop background failed to load.");
+        if(!robotOk) console.error("Nexus Shop robot failed to load.");
         return true;
-      }).catch(error=>{
-        shopAssetsReady=false;
-        shopAssetPromise=null;
-        console.error("Nexus Shop asset loading failed:",error);
-        return false;
       });
     }
     return shopAssetPromise;
@@ -245,20 +244,18 @@
   }
 
   if(shop){
-    shop.addEventListener("click",async()=>{
+    shop.addEventListener("click",()=>{
       playing=false;
 
-      // Do not reveal the shop until both the background and robot are ready.
-      const ready=await prepareShopAssets();
-      if(!ready){
-        console.error("Nexus Shop is unavailable because its artwork did not load.");
-        return;
-      }
-
+      // Open the shop immediately. Artwork loads independently so a slow or
+      // failed image can never block the shop screen itself.
       hideOverlay(document.getElementById("menu"));
       showOverlay(shopMenu);
-      drawShopRobot();
       if(nexusChat)nexusChat.classList.add("hidden");
+
+      prepareShopAssets().then(()=>{
+        drawShopRobot();
+      });
     });
   }
 
