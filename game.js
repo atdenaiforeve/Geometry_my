@@ -197,7 +197,7 @@ canvas.addEventListener("pointerdown",e=>{
   if(editorMode){return;}
   e.preventDefault();
   if(creatorTestBeat){
-    openEditor();
+    openEditor(true);
     return;
   }
   holding=true;doJump();
@@ -589,14 +589,14 @@ function unlockCreator(){
     creatorPassword.focus();
   }
 }
-function openEditor(){
+function openEditor(preserveTestBeat=false){
   playing=false;
   editorMode=true;
   editorCamera=0;
   editorZoom=1;
   editorModeTab="build";
   editorSelected=null;
-  creatorTestBeat=false;
+  if(!preserveTestBeat) creatorTestBeat=false;
   creatorTestMode=false;
   editorHistory=[];
   editorRedoStack=[];
