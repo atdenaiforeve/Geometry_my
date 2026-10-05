@@ -190,6 +190,13 @@ html, body {
   filter: hue-rotate(40deg) saturate(1.6) drop-shadow(4px 0 0 rgba(255,47,214,.7)) drop-shadow(-4px 0 0 rgba(47,243,255,.7));
   transform: translateX(var(--shift, 4px)) skewX(-1deg);
 }
+#stage.warping .flash { animation: warpFlash .65s ease-in forwards; }
+@keyframes warpFlash {
+  0%   { opacity: 0; }
+  70%  { opacity: .85; }
+  100% { opacity: 1; }
+}
+
 /* ---------- Title ---------- */
 
 .title {
@@ -323,6 +330,26 @@ html, body {
 }
 .btn:active { transform: scale(.97); }
 
+/* ---------- Toast (placeholder feedback; remove when screens exist) ---------- */
+
+#toast {
+  position: absolute;
+  z-index: 10;
+  left: 50%; top: 24%;
+  transform: translate(-50%, -10px);
+  padding: .7rem 1.2rem;
+  background: rgba(5,8,22,.85);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 18px rgba(47,243,255,.5);
+  font-size: .8rem;
+  letter-spacing: .12em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  text-align: center;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* ---------- Small screens ---------- */
 
 @media (max-width: 640px) {
@@ -378,6 +405,7 @@ html, body {
 
     <div class="vignette" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
+    <div class="flash" aria-hidden="true"></div>
 
     <h1 id="title" class="title" data-text="INTO THE NEXUS">INTO THE NEXUS</h1>
 
@@ -398,6 +426,7 @@ html, body {
       </ul>
     </nav>
 
+    <div id="toast" role="status" aria-live="polite"></div>
   </main>
 
   <script>
@@ -412,13 +441,14 @@ html, body {
 (() => {
   'use strict';
 
-  /* ---------- Menu routes ---------- */
+  /* ---------- 1. HOOK YOUR GAME UP HERE ---------- */
   const ACTIONS = {
-    play: () => window.location.assign('game.html?screen=levels'),
-    shop: () => window.location.assign('game.html?screen=shop'),
-    customize: () => window.location.assign('game.html?screen=customize'),
-    build: () => window.location.assign('game.html?screen=maker'),
+    play:      () => notify('PLAY - connect your level select / game start here'),
+    shop:      () => notify('SHOP - connect your shop screen here'),
+    customize: () => notify('CUSTOMIZE - connect your icon / colour editor here'),
+    build:     () => notify('BUILD LEVEL - connect your level editor here'),
   };
+  // Example: play: () => { window.location.href = 'game.html'; },
 
   /* ---------- 2. Setup ---------- */
   const CX = 0.5, CY = 0.52;                       // vortex centre (fraction of screen)
@@ -426,6 +456,7 @@ html, body {
   const title  = document.getElementById('title');
   const canvas = document.getElementById('fx');
   const ctx    = canvas.getContext('2d');
+  const toastEl = document.getElementById('toast');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Rift lines run from the vortex to the edge of the screen: [x, y, colour]
@@ -438,8 +469,11 @@ html, body {
 
   let W = 0, H = 0, dpr = 1, cx = 0, cy = 0;
   let debris = [], pixels = [], bolts = [];
-    let glitchUntil = 0;
-const rand = (a, b) => a + Math.random() * (b - a);
+  let warp = 0, warpTarget = 0;
+  let glitchUntil = 0;
+  let busy = false;
+
+  const rand = (a, b) => a + Math.random() * (b - a);
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -483,8 +517,9 @@ const rand = (a, b) => a + Math.random() * (b - a);
     for (const d of debris) {
       d.ang += d.orbit * dt;
       d.rot += d.spin * dt;
-      const x = cx + Math.cos(d.ang) * d.dist * 1.5;
-      const y = cy + Math.sin(d.ang) * d.dist * 0.8 + Math.sin(t + d.bob) * 6;
+      const pull = 1 - warp * 0.9;                  // debris gets sucked in when warping
+      const x = cx + Math.cos(d.ang) * d.dist * 1.5 * pull;
+      const y = cy + Math.sin(d.ang) * d.dist * 0.8 * pull + Math.sin(t + d.bob) * 6;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(d.rot);
@@ -553,7 +588,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
   /* ---------- 5. Vortex ---------- */
   function drawVortex(t) {
     const base = Math.min(W, H) * 0.12;
-    const R = base * (1 + 0.04 * Math.sin(t * 2.2));
+    const R = base * (1 + warp * 7) * (1 + 0.04 * Math.sin(t * 2.2));
     ctx.save();
     ctx.translate(cx, cy);
 
@@ -661,6 +696,8 @@ const rand = (a, b) => a + Math.random() * (b - a);
     last = now;
     const t = now / 1000;
 
+    warp += (warpTarget - warp) * Math.min(1, dt * 6);
+
     ctx.clearRect(0, 0, W, H);
     drawPixels(dt);
     drawDebris(t, dt);
@@ -674,14 +711,32 @@ const rand = (a, b) => a + Math.random() * (b - a);
     requestAnimationFrame(frame);
   }
 
-  /* ---------- Menu interaction ---------- */
+  /* ---------- 10. Menu interaction ---------- */
+  function notify(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(notify.timer);
+    notify.timer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
   function go(action) {
-    ACTIONS[action]?.();
+    if (busy) return;
+    busy = true;
+    stage.classList.add('warping');      // vortex swells + white/pink flash
+    warpTarget = 1;
+    glitchBurst();
+    setTimeout(() => {
+      (ACTIONS[action] || (() => {}))();
+      warpTarget = 0;
+      stage.classList.remove('warping');
+      busy = false;
+    }, 650);
   }
 
   const buttons = Array.from(document.querySelectorAll('.btn'));
   buttons.forEach((btn) => btn.addEventListener('click', () => go(btn.dataset.action)));
 
+  // Arrow keys move between buttons (Enter / Space still activate)
   document.addEventListener('keydown', (e) => {
     const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
     if (!(e.key in keys)) return;
@@ -691,7 +746,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
     buttons[next].focus();
   });
 
-  /* ---------- Start ---------- */
+  /* ---------- 11. Start ---------- */
   window.addEventListener('resize', resize);
   resize();
 
